@@ -30,9 +30,32 @@ export interface StorePublishSettings {
  * Resolves Telegram settings stored in `store_settings`, including channel, group,
  * topic thread ID, and default publish target.
  */
-export async function resolveStorePublishSettings(): Promise<StorePublishSettings> {
+export async function resolveStorePublishSettings(tenantId?: string | null): Promise<StorePublishSettings> {
+  const supabase = getSupabaseAdmin();
+
+  if (tenantId) {
+    try {
+      const { data } = await supabase
+        .from("tenants")
+        .select("telegram_channel, telegram_group, telegram_group_thread_id, publish_target")
+        .eq("id", tenantId)
+        .maybeSingle();
+
+      if (data) {
+        return {
+          channelId: data.telegram_channel || null,
+          groupId: data.telegram_group || null,
+          groupThreadId: data.telegram_group_thread_id || null,
+          publishTarget:
+            data.publish_target === "group" || data.publish_target === "both"
+              ? data.publish_target
+              : "channel",
+        };
+      }
+    } catch {}
+  }
+
   try {
-    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from("store_settings")
       .select("telegram_channel, telegram_group, telegram_group_thread_id, publish_target")
@@ -61,18 +84,18 @@ export async function resolveStorePublishSettings(): Promise<StorePublishSetting
 /**
  * Resolves which Telegram channel to publish to.
  */
-export async function resolveChannelId(): Promise<string | null> {
-  const settings = await resolveStorePublishSettings();
+export async function resolveChannelId(tenantId?: string | null): Promise<string | null> {
+  const settings = await resolveStorePublishSettings(tenantId);
   return settings.channelId;
 }
 
 /**
  * Builds the deep link used by the "View Product" button.
  */
-export function createProductLink(product: Pick<Product, "id">): string {
+export function createProductLink(product: Pick<Product, "id" | "tenant_id">, tenantSlug?: string | null): string {
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
   const appName = process.env.NEXT_PUBLIC_TELEGRAM_APP_NAME;
-  const startParam = `product_${product.id}`;
+  const startParam = tenantSlug ? `s_${tenantSlug}_p_${product.id}` : `product_${product.id}`;
 
   if (botUsername && appName && appName.trim()) {
     const cleanApp = appName.trim().toLowerCase();
@@ -81,12 +104,15 @@ export function createProductLink(product: Pick<Product, "id">): string {
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://habentech.vercel.app";
   const cleanBase = baseUrl.replace(/\/$/, "");
+  if (tenantSlug) {
+    return `${cleanBase}/s/${tenantSlug}/products/${product.id}`;
+  }
   return `${cleanBase}/products/${product.id}`;
 }
 
-function buildViewProductKeyboard(product: Product): { inline_keyboard: InlineKeyboardButton[][] } {
+function buildViewProductKeyboard(product: Product, tenantSlug?: string | null): { inline_keyboard: InlineKeyboardButton[][] } {
   return {
-    inline_keyboard: [[{ text: "🛍 View Product", url: createProductLink(product) }]],
+    inline_keyboard: [[{ text: "🛍 View Product", url: createProductLink(product, tenantSlug) }]],
   };
 }
 

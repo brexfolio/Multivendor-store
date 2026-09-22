@@ -12,6 +12,7 @@ export interface ProductRequest {
   customer_name: string;
   username: string | null;
   status: RequestStatus;
+  tenant_id?: string;
   created_at: string;
   product?: {
     id: string;
@@ -22,6 +23,7 @@ export interface ProductRequest {
 }
 
 export interface RequestInput {
+  tenant_id?: string;
   product_id: string;
   init_data: string;
 }

@@ -58,12 +58,14 @@ export interface Product {
   group_published_at?: string | null;
   publish_target?: PublishTarget | null;
   created_at: string;
+  tenant_id?: string;
   updated_at: string;
   images?: ProductImage[];
   specifications?: ProductSpecification[];
 }
 
 export interface ProductInput {
+  tenant_id?: string;
   name: string;
   category: ProductCategory;
   price: number;

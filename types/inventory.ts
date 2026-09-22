@@ -20,6 +20,7 @@ export interface InventoryRecord {
   storage_location: string | null;
   purchase_date: string | null;
   notes: string | null;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
   product?: {
@@ -37,6 +38,7 @@ export interface InventoryTransaction {
   id: string;
   inventory_id: string;
   product_id: string;
+  tenant_id?: string;
   transaction_type: InventoryTransactionType;
   quantity_change: number;
   previous_quantity: number;

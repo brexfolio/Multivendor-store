@@ -64,6 +64,7 @@ export interface SellRequest {
   price_negotiable: boolean;
   status: SellRequestStatus;
   admin_notes: string | null;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
   specifications?: SellRequestSpecification[];
@@ -72,6 +73,7 @@ export interface SellRequest {
 }
 
 export interface SellRequestInput {
+  tenant_id?: string;
   category: SellDeviceCategory;
   brand: string;
   model: string;

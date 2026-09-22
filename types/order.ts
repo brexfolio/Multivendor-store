@@ -9,6 +9,7 @@ export interface Order {
   quantity: number;
   total_price: number;
   status: OrderStatus;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
   product?: {
@@ -20,6 +21,7 @@ export interface Order {
 }
 
 export interface OrderInput {
+  tenant_id?: string;
   product_id: string;
   quantity: number;
   init_data: string;
