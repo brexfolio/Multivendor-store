@@ -1,0 +1,225 @@
+/* ==========================================================
+   DESIGN TOKENS & TYPOGRAPHY — UI/UX Pro Max Design System
+   ========================================================== */
+
+/* ---------- Top-Level Typography ---------- */
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 300;
+  src: url("/fonts/SF-Pro-Display-Light.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/fonts/SF-Pro-Display-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 500;
+  src: url("/fonts/SF-Pro-Display-Medium.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 600;
+  src: url("/fonts/SF-Pro-Display-Semibold.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Pro Display";
+  font-style: normal;
+  font-weight: 700 800;
+  src: url("/fonts/SF-Pro-Display-Bold.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  /* Store — Light (Default / Telegram Light Theme) */
+  --store-bg: #f8f9fb;
+  --store-surface: #ffffff;
+  --store-surface-alt: #f1f3f7;
+  --store-surface-elevated: #ffffff;
+  --store-border: rgba(0, 0, 0, 0.08);
+  --store-border-soft: rgba(0, 0, 0, 0.04);
+  --store-text: #0f172a;
+  --store-text-secondary: #475569;
+  --store-text-muted: #64748b;
+  --store-primary: #2563eb;
+  --store-primary-hover: #1d4ed8;
+  --store-primary-soft: rgba(37, 99, 235, 0.08);
+  --store-primary-contrast: #ffffff;
+  --store-accent: #f97316;
+  --store-success: #10b981;
+  --store-success-bg: rgba(16, 185, 129, 0.1);
+  --store-warning: #f59e0b;
+  --store-warning-bg: rgba(245, 158, 11, 0.1);
+  --store-danger: #ef4444;
+  --store-danger-bg: rgba(239, 68, 68, 0.1);
+
+  --store-radius-xs: 6px;
+  --store-radius-sm: 10px;
+  --store-radius-md: 16px;
+  --store-radius-lg: 20px;
+  --store-radius-xl: 24px;
+  --store-placeholder: #94a3b8;
+
+  --store-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --store-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --store-shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --store-shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+
+  /* Admin — Dark Navy / Obsidian Studio Theme */
+  --admin-bg: #0f121d;
+  --admin-bg-gradient: none;
+  --admin-surface: #171b29;
+  --admin-surface-alt: #202638;
+  --admin-surface-elevated: #283046;
+  --admin-border: rgba(255, 255, 255, 0.08);
+  --admin-border-soft: rgba(255, 255, 255, 0.04);
+  --admin-highlight: rgba(255, 255, 255, 0.03);
+  --admin-text: #ffffff;
+  --admin-text-secondary: #94a3b8;
+  --admin-text-muted: #64748b;
+  --admin-placeholder: #64748b;
+  --admin-primary: #3b82f6;
+  --admin-primary-soft: rgba(59, 130, 246, 0.14);
+  --admin-accent: #60a5fa;
+  --admin-accent-soft: rgba(96, 165, 250, 0.14);
+  --admin-brand-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  --admin-success: #10b981;
+  --admin-success-soft: rgba(16, 185, 129, 0.14);
+  --admin-success-bg: rgba(16, 185, 129, 0.14);
+  --admin-warning: #f59e0b;
+  --admin-warning-soft: rgba(245, 158, 11, 0.14);
+  --admin-warning-bg: rgba(245, 158, 11, 0.14);
+  --admin-danger: #ef4444;
+  --admin-danger-soft: rgba(239, 68, 68, 0.14);
+  --admin-danger-bg: rgba(239, 68, 68, 0.14);
+  --admin-teal: #14b8a6;
+  --admin-teal-soft: rgba(20, 184, 166, 0.14);
+  --admin-radius-xl: 24px;
+  --admin-radius-lg: 20px;
+  --admin-radius-md: 14px;
+  --admin-radius-sm: 10px;
+  --admin-radius-xs: 8px;
+  --admin-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --admin-shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --admin-shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --admin-bar-bg: rgba(23, 27, 41, 0.9);
+  --admin-icon-bg: #202638;
+  --admin-icon-color: #ffffff;
+
+  --font-sans: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---------- Dark Mode (System / Telegram dark) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --store-bg: #0b0e14;
+    --store-surface: #141824;
+    --store-surface-alt: #1c2233;
+    --store-surface-elevated: #22293d;
+    --store-border: rgba(255, 255, 255, 0.08);
+    --store-border-soft: rgba(255, 255, 255, 0.04);
+    --store-text: #f8fafc;
+    --store-text-secondary: #cbd5e1;
+    --store-text-muted: #94a3b8;
+    --store-primary: #3b82f6;
+    --store-primary-hover: #2563eb;
+    --store-primary-soft: rgba(59, 130, 246, 0.15);
+    --store-success-bg: rgba(16, 185, 129, 0.16);
+    --store-warning-bg: rgba(245, 158, 11, 0.16);
+    --store-danger-bg: rgba(239, 68, 68, 0.16);
+    --store-placeholder: #64748b;
+    --store-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --store-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --store-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --store-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+  }
+}
+
+[data-tg-theme="dark"] {
+  --store-bg: #0b0e14;
+  --store-surface: #141824;
+  --store-surface-alt: #1c2233;
+  --store-surface-elevated: #22293d;
+  --store-border: rgba(255, 255, 255, 0.08);
+  --store-border-soft: rgba(255, 255, 255, 0.04);
+  --store-text: #f8fafc;
+  --store-text-secondary: #cbd5e1;
+  --store-text-muted: #94a3b8;
+  --store-primary: #3b82f6;
+  --store-primary-hover: #2563eb;
+  --store-primary-soft: rgba(59, 130, 246, 0.15);
+  --store-success-bg: rgba(16, 185, 129, 0.16);
+  --store-warning-bg: rgba(245, 158, 11, 0.16);
+  --store-danger-bg: rgba(239, 68, 68, 0.16);
+  --store-placeholder: #64748b;
+  --store-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --store-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --store-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --store-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+/* Explicit Light Mode Override */
+[data-tg-theme="light"] {
+  --store-bg: #f8f9fb;
+  --store-surface: #ffffff;
+  --store-surface-alt: #f1f3f7;
+  --store-surface-elevated: #ffffff;
+  --store-border: rgba(0, 0, 0, 0.08);
+  --store-border-soft: rgba(0, 0, 0, 0.04);
+  --store-text: #0f172a;
+  --store-text-secondary: #475569;
+  --store-text-muted: #64748b;
+  --store-primary: #2563eb;
+  --store-primary-hover: #1d4ed8;
+  --store-primary-soft: rgba(37, 99, 235, 0.08);
+  --store-placeholder: #94a3b8;
+
+  --admin-bg: #f8f9fb;
+  --admin-bg-gradient: none;
+  --admin-surface: #ffffff;
+  --admin-surface-alt: #f1f3f7;
+  --admin-surface-elevated: #ffffff;
+  --admin-border: rgba(0, 0, 0, 0.08);
+  --admin-border-soft: rgba(0, 0, 0, 0.04);
+  --admin-highlight: rgba(0, 0, 0, 0.02);
+  --admin-text: #0f172a;
+  --admin-text-secondary: #475569;
+  --admin-text-muted: #64748b;
+  --admin-placeholder: #94a3b8;
+  --admin-primary: #2563eb;
+  --admin-primary-soft: rgba(37, 99, 235, 0.08);
+  --admin-accent: #2563eb;
+  --admin-accent-soft: rgba(37, 99, 235, 0.08);
+  --admin-brand-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  --admin-success: #10b981;
+  --admin-success-soft: rgba(16, 185, 129, 0.08);
+  --admin-success-bg: rgba(16, 185, 129, 0.08);
+  --admin-warning: #f59e0b;
+  --admin-warning-soft: rgba(245, 158, 11, 0.08);
+  --admin-warning-bg: rgba(245, 158, 11, 0.08);
+  --admin-danger: #ef4444;
+  --admin-danger-soft: rgba(239, 68, 68, 0.08);
+  --admin-danger-bg: rgba(239, 68, 68, 0.08);
+  --admin-teal: #0d9488;
+  --admin-teal-soft: rgba(13, 148, 136, 0.08);
+  --admin-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --admin-shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --admin-shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --admin-bar-bg: rgba(255, 255, 255, 0.9);
+  --admin-icon-bg: #f1f3f7;
+  --admin-icon-color: #64748b;
+}

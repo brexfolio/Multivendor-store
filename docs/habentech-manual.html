@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Habentech — App Manual & Feature Guide</title>
+<style>
+  :root {
+    --bg: #f3f4f5;
+    --surface: #ffffff;
+    --border: #e6e7e9;
+    --text: #1a1b1c;
+    --muted: #6b6c6e;
+    --primary: #2f6bff;
+    --primary-dark: #142a63;
+    --accent: #ff8a3d;
+    --success: #17a672;
+    --success-bg: #e5f8f0;
+    --danger: #e2483d;
+    --danger-bg: #fdeceb;
+    --warning: #e8a600;
+    --warning-bg: #fff6e0;
+    --radius: 16px;
+    --shadow: 0 8px 24px rgba(16,20,37,0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    line-height: 1.55;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, var(--primary-dark), #0a0e1a);
+    color: #fff;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 0;
+    scrollbar-width: thin;
+  }
+
+  .sidebar__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 22px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .sidebar__logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    color: #fff;
+  }
+
+  .sidebar__title { font-weight: 700; font-size: 15px; margin: 0 0 2px; }
+  .sidebar__sub { font-size: 12px; color: rgba(255,255,255,0.6); margin: 0; }
+
+  .nav-section {
+    padding: 18px 22px 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 22px;
+    color: rgba(255,255,255,0.82);
+    text-decoration: none;
+    font-size: 13.5px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .sidebar nav a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .sidebar nav a.active { background: rgba(255,255,255,0.08); color: #fff; border-left-color: var(--accent); }
+  .sidebar nav a .ico { width: 18px; text-align: center; flex-shrink: 0; }
+
+  /* ---------- Main ---------- */
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 32px 40px 80px;
+    max-width: 940px;
+  }
+
+  .main h1 { font-size: 28px; margin: 0 0 6px; }
+  .main > p.lead { color: var(--muted); font-size: 16px; margin: 0 0 30px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card h3 { margin: 22px 0 8px; font-size: 15px; color: var(--primary-dark); }
+  .card h3:first-of-type { margin-top: 12px; }
+
+  .card p { margin: 6px 0; }
+  .card p.ext { font-size: 12px; color: var(--muted); margin: 0 0 16px; }
+
+  .step { margin-bottom: 26px; }
+  .step:last-child { margin-bottom: 0; }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .tag--store { background: var(--primary); color: #fff; }
+  .tag--admin { background: var(--accent); color: #fff; }
+  .tag--bot { background: #229ed9; color: #fff; }
+  .tag--inv { background: var(--success); color: #fff; }
+
+  ul.clean { padding-left: 20px; margin: 8px 0; }
+  ul.clean li { margin: 4px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 10px 0;
+  }
+  th, td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; background: var(--bg); }
+
+  .status { font-weight: 600; }
+  .status--sold { color: var(--danger); }
+  .status--ok { color: var(--success); }
+  .status--warn { color: var(--warning); }
+
+  /* Inventory / stock flow boxes */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+    margin: 12px 0;
+  }
+  .flow__step {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+  .flow__arrow { color: var(--muted); }
+
+  .note {
+    background: var(--warning-bg);
+    border-left: 4px solid var(--warning);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 14px 0;
+    font-size: 13.5px;
+  }
+  .note--info { background: #eaf1ff; border-left-color: var(--primary); }
+  .note--success { background: var(--success-bg); border-left-color: var(--success); }
+
+  .keys {
+    background: #0f1220;
+    color: #dbe2ff;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 12.5px;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  .keys code { color: #7fb3ff; }
+
+  .kbd {
+    background: #eef0f3;
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    padding: 1px 7px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+
+  .callout-title { font-weight: 700; }
+
+  @media (max-width: 820px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; padding: 14px 0; }
+    .main { padding: 24px 18px 60px; }
+    .sidebar nav a { padding: 9px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar__brand">
+    <div class="sidebar__logo">H</div>
+    <div>
+      <p class="sidebar__title">Habentech</p>
+      <p class="sidebar__sub">Manual & Feature Guide</p>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-section">Overview</div>
+    <a href="#overview" class="active"><span class="ico">🏠</span> What is Habentech?</a>
+    <a href="#roles"><span class="ico">👥</span> Who uses it</a>
+
+    <div class="nav-section">For Customers (Store)</div>
+    <a href="#home"><span class="ico">🛍️</span> Home & Browsing</a>
+    <a href="#product-detail"><span class="ico">📱</span> Product Detail</a>
+    <a href="#order-request"><span class="ico">🛒</span> Order / Request</a>
+    <a href="#favorites"><span class="ico">❤️</span> Favorites</a>
+    <a href="#sell-device"><span class="ico">💰</span> Sell a Device</a>
+
+    <div class="nav-section">For Admin (Dashboard)</div>
+    <a href="#admin-overview"><span class="ico">📊</span> Admin Dashboard</a>
+    <a href="#admin-products"><span class="ico">🏷️</span> Manage Products</a>
+    <a href="#admin-orders"><span class="ico">📦</span> Orders & Requests</a>
+    <a href="#admin-sell"><span class="ico">💬</span> Sell Requests</a>
+    <a href="#inventory"><span class="ico">📈</span> Inventory & Stock</a>
+    <a href="#settings"><span class="ico">⚙️</span> Settings</a>
+
+    <div class="nav-section">Automation & Ops</div>
+    <a href="#bot"><span class="ico">🤖</span> Telegram Bot Actions</a>
+    <a href="#sharing"><span class="ico">🔗</span> Sharing & Deep Links</a>
+    <a href="#security"><span class="ico">🔒</span> Security</a>
+    <a href="#deployment"><span class="ico">🚀</span> Deployment & Env</a>
+  </nav>
+</aside>
+
+<main class="main">
+  <h1>Habentech — Complete Feature Manual</h1>
+  <p class="lead">Everything about how the app works: the customer store, the admin dashboard, and especially inventory &amp; stock management.</p>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="card" id="overview">
+    <h2>🏠 What is Habentech?</h2>
+    <p class="ext">A Telegram Mini App electronics store + owner dashboard, running through the bot <b>@pixelsrbot</b> at <b>https://habentech.vercel.app</b>.</p>
+    <p>It has <b>two experiences</b> in one codebase:</p>
+    <ul class="clean">
+      <li><span class="tag tag--store">Store</span> &nbsp;Covers the customer store — browse, search, favorite, order, request, and sell devices.</li>
+      <li><span class="tag tag--admin">Admin</span> &nbsp;Covers the owner's dashboard — products, orders, requests, sell-requests, inventory and settings.</li>
+    </ul>
+  </section>
+
+  <section class="card" id="roles">
+    <h2>👥 Who uses it</h2>
+    <table>
+      <tr><th>Role</th><th>Access</th><th>What they do</th></tr>
+      <tr><td><b>Customer</b></td><td>Store (Home / Sell / Favorites / Orders)</td><td>Browse, order, request products, sell a device, accept offers.</td></tr>
+      <tr><td><b>Admin (you)</b></td><td>All of the above + <b>My Store</b> dashboard</td><td>Full management. Identified by <code>ADMIN_TELEGRAM_ID</code>.</td></tr>
+    </table>
+    <div class="note note--info"><span class="callout-title">Tip:</span> The admin is the single Telegram user whose ID equals the <code>ADMIN_TELEGRAM_ID</code> env value — only they see the dashboard.</div>
+  </section>
+
+  <!-- ============ CUSTOMER ============ -->
+  <section class="card" id="home">
+    <h2>🛍️ Home & Browsing</h2>
+    <p class="ext">The landing page customers see first.</p>
+    <div class="step">
+      <h3>Elements</h3>
+      <ul class="clean">
+        <li><b>Search bar</b> — live-search products by name.</li>
+        <li><b>Promo banner</b> — current promotion / hero message.</li>
+        <li><b>Category filter</b> — Smartphones · Laptops · Tablets · Accessories · Smart Watches · Gaming · Other.</li>
+        <li><b>Product grid</b> — cards with image, price, availability badge &amp; ♥ button.</li>
+        <li><b>Bottom nav</b> — Home / Sell / Favorites / Orders.</li>
+      </ul>
+    </div>
+    <div class="step">
+      <h3>Availability badges</h3>
+      <table>
+        <tr><th>Status</th><th>Meaning</th></tr>
+        <tr><td>Available</td><td>In stock and orderable.</td></tr>
+        <tr><td>Low Stock</td><td>Still orderable but running low.</td></tr>
+        <tr><td>Out of Stock</td><td>Sold out — cannot order or request.</td></tr>
+        <tr><td>Sold</td><td>Already sold — not orderable.</td></tr>
+        <tr><td>Unavailable</td><td>Hidden from ordering/requests.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="card" id="product-detail">
+    <h2>📱 Product Detail Page</h2>
+    <p class="ext">The single product view opened from cards, channel links, or deep links.</p>
+    <ul class="clean">
+      <li><b>⬅ Back</b> — returns to the previous page, or <b>Home</b> if you arrived via a channel/deep link.</li>
+      <li><b>Share (paper plane)</b> — opens a bottom sheet:
+        <ul class="clean">
+          <li><b>Copy Link</b> — copies the shareable product link (shows a ✔ check).</li>
+          <li><b>Share to Telegram</b> — opens <code>t.me/share</code> with the link + product name.</li>
+          <li><b>Share to WhatsApp</b> — opens <code>wa.me</code> with product text + link.</li>
+          <li><b>More options…</b> — native OS share sheet (when supported).</li>
+        </ul>
+      </li>
+      <li><b>♥ Favorite</b> — taps add a heart <b>pop</b> + red <b>particle burst</b>.</li>
+      <li><b>Image gallery</b> — swipe between photos; broken images show a graceful fallback.</li>
+      <li><b>Specifications & description</b> — product details.</li>
+      <li><b>Order / Request buttons</b> — at the bottom (see next section).</li>
+    </ul>
+    <div class="note note--info"><span class="callout-title">Note:</span> The bottom nav is hidden here by design — you navigate back with the arrow, keeping focus on the product.</div>
+  </section>
+
+  <section class="card" id="order-request">
+    <h2>🛒 Order vs. Request</h2>
+    <p class="ext">Two ways to get a product, depending on availability and stock.</p>
+
+    <div class="step">
+      <h3>Order Now <span class="tag tag--store">Store</span></h3>
+      <p>When a product is <b>Available</b> or <b>Low Stock</b>, customers can place an order:</p>
+      <div class="flow">
+        <span class="flow__step">Tap Order Now</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Choose quantity</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Confirm</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Order created (Pending)</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Admin gets bot buttons</span>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>Request Product <span class="tag tag--store">Store</span></h3>
+      <p>Used when a product is not directly orderable, or the customer wants it set aside:</p>
+      <div class="flow">
+        <span class="flow__step">Tap Request Product</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Confirm request</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Admin notified in bot</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Admin marks status</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Customer notified automatically</span>
+      </div>
+      <p>The backend rejects requests for <b>Sold / Unavailable / Out of Stock</b> products (409).</p>
+    </div>
+  </section>
+
+  <section class="card" id="favorites">
+    <h2>❤️ Favorites</h2>
+    <p class="ext">Save products you're interested in.</p>
+    <ul class="clean">
+      <li>Tap the ♥ on any card or product page to add/remove.</li>
+      <li>The <b>Favorites</b> tab lists only the products you've saved, <b>kept in the order you favorited them</b>.</li>
+      <li>Favorites are stored locally on the device (per user).</li>
+    </ul>
+  </section>
+
+  <section class="card" id="sell-device">
+    <h2>💰 Sell a Device (Sell tab)</h2>
+    <p class="ext">Customers can list a used device for the store to buy.</p>
+    <h3>Multi-step wizard</h3>
+    <div class="flow">
+      <span class="flow__step">1 · Brand &amp; Model</span><span class="flow__arrow">→</span>
+      <span class="flow__step">2 · Condition</span><span class="flow__arrow">→</span>
+      <span class="flow__step">3 · Details (screen/storage…)</span><span class="flow__arrow">→</span>
+      <span class="flow__step">4 · Expected price</span><span class="flow__arrow">→</span>
+      <span class="flow__step">5 · Photos</span><span class="flow__arrow">→</span>
+      <span class="flow__step">6 · Review &amp; submit</span>
+    </div>
+    <ul class="clean">
+      <li><b>Photo rules:</b> image files only, <b>max 10MB each</b>; uploads continue even if one file fails.</li>
+      <li>After review, the store can send an <b>offer</b> to the customer.</li>
+      <li>The customer sees offers in <b>My Sell Submissions</b> and can <b>Accept</b> or <b>Reject</b>.</li>
+    </ul>
+  </section>
+
+  <!-- ============ ADMIN ============ -->
+  <section class="card" id="admin-overview">
+    <h2>📊 Admin Dashboard</h2>
+    <p class="ext">Reached via <b>🏬 My Store</b> in the bot (admin only).</p>
+    <div class="card" style="box-shadow:none;border:1px solid var(--border);margin-bottom:14px;">
+      <h3>Analytics cards</h3>
+      <ul class="clean">
+        <li>Total / Available / Sold products</li>
+        <li>Total &amp; pending orders</li>
+        <li>Product requests &amp; sell-requests</li>
+        <li>Total units in stock, low-stock, out-of-stock</li>
+        <li>Inventory value</li>
+      </ul>
+    </div>
+    <p>Navigation in the dashboard: <b>Overview · Products · Orders · Requests · Sell Requests · Inventory · Settings</b>.</p>
+  </section>
+
+  <section class="card" id="admin-products">
+    <h2>🏷️ Manage Products</h2>
+    <p class="ext">Create, edit and publish products — the core of the store.</p>
+    <div class="step">
+      <h3>Creating / editing</h3>
+      <ul class="clean">
+        <li>Set name, category, price, currency, condition, description, and specifications.</li>
+        <li>Upload <b>multiple images</b>.</li>
+        <li><b>Important:</b> images are uploaded and posted to Telegram only when you <b>Save/Publish</b> — not before (saves bandwidth).</li>
+      </ul>
+    </div>
+    <div class="step">
+      <h3>Publishing to the channel</h3>
+      <p>Publishing posts the product to your configured Telegram channel (<code>TELEGRAM_CHANNEL_ID</code>) with a <b>View Product</b> button that deep-links into the Mini App.</p>
+    </div>
+  </section>
+
+  <section class="card" id="admin-orders">
+    <h2>📦 Orders & Requests</h2>
+    <p class="ext">Everything coming in from customers.</p>
+    <div class="step">
+      <h3>Orders</h3>
+      <table>
+        <tr><th>Status</th><th>Stock effect</th></tr>
+        <tr><td>Confirmed</td><td>No change</td></tr>
+        <tr><td><b>Completed</b></td><td><span class="status status--warn">Reduces stock</span> automatically (creates a Sale transaction)</td></tr>
+        <tr><td>Cancelled / Reversed</td><td><span class="status status--ok">Restores stock</span> automatically (creates a Return transaction)</td></tr>
+      </table>
+    </div>
+    <div class="step">
+      <h3>Product Requests</h3>
+      <p>Admin marks a request <b>Completed / Sold / Unavailable</b> — the customer is notified in Telegram with a friendly message describing the outcome.</p>
+    </div>
+  </section>
+
+  <section class="card" id="admin-sell">
+    <h2>💬 Sell Requests</h2>
+    <p class="ext">Devices customers want to sell to you.</p>
+    <ul class="clean">
+      <li>Review the customer's listing (model, condition, expected price, photos).</li>
+      <li><b>Mark Under Review</b> (via bot button) to start the process.</li>
+      <li>Send the customer an <b>offer</b>; they accept/reject in-app.</li>
+    </ul>
+  </section>
+
+  <!-- ============ INVENTORY ============ -->
+  <section class="card" id="inventory">
+    <h2>📈 Inventory & Stock Management</h2>
+    <p class="ext"><b>The heart of the admin side.</b> This section explains stock, transactions, and how stock auto-stays in sync with orders.</p>
+
+    <div class="step">
+      <h3>Stock is tracked per product</h3>
+      <ul class="clean">
+        <li>Each product has an inventory record with a <b>total quantity</b>.</li>
+        <li>Every change is recorded as a <b>transaction</b> (an audit trail).</li>
+        <li>Stock can never go below <b>0</b> (enforced in the database too, <code>quantity &gt;= 0</code>).</li>
+      </ul>
+      <table>
+        <tr><th>Transaction</th><th>Effect</th><th>Examples</th></tr>
+        <tr><td><b>Add</b></td><td><span class="status status--ok">+ stock</span></td><td>Restock from supplier, purchase</td></tr>
+        <tr><td><b>Remove</b></td><td><span class="status status--warn">− stock</span></td><td>Damage, loss, manual adjustment</td></tr>
+        <tr><td><b>Adjust</b></td><td>Set to a target number</td><td>Stock count corrections</td></tr>
+        <tr><td><b>Sale</b></td><td><span class="status status--warn">− stock</span> (auto)</td><td>Completing an order</td></tr>
+        <tr><td><b>Return</b></td><td><span class="status status--ok">+ stock</span> (auto)</td><td>Cancelling/reversing an order</td></tr>
+      </table>
+    </div>
+
+    <div class="step">
+      <h3>Manual stock actions (in-app)</h3>
+      <p>Open a product in the <b>Inventory</b> section to:</p>
+      <ul class="clean">
+        <li><b>Add stock</b> — enter quantity, optional cost price &amp; supplier. Preview shows the new total.</li>
+        <li><b>Remove stock</b> — enter a reason from a list. <b>Validated</b>: you can't remove more than the current quantity (the input has a max and live preview).</li>
+        <li><b>Adjust stock</b> — set the quantity to a specific number, with a required reason.</li>
+      </ul>
+      <p>Every action is recorded to the <b>transaction history</b> for that product.</p>
+    </div>
+
+    <div class="step">
+      <h3>How an order changes stock (automation)</h3>
+      <div class="flow">
+        <span class="flow__step">Order placed</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Admin taps <b>Complete</b></span><span class="flow__arrow">→</span>
+        <span class="flow__step">Sale transaction created</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Quantity reduced</span><span class="flow__arrow">→</span>
+        <span class="flow__step">Availability updated</span>
+      </div>
+      <div class="note note--info">
+        <span class="callout-title">Idempotency guard:</span> A unique database index (added via SQL) guarantees an order can only create <b>one Sale</b> and <b>one Return</b> — even if the admin taps Complete twice. No double stock deduction is possible.
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>Availability &amp; low-stock</h3>
+      <ul class="clean">
+        <li>Availability <b>auto-syncs</b> with stock.</li>
+        <li>When stock hits <b>0</b> → availability becomes <b>Out of Stock</b> (not orderable).</li>
+        <li>Below the <b>minimum stock level</b> → flagged as <b>Low Stock</b> and a low-stock notification can be triggered.</li>
+      </ul>
+    </div>
+
+    <div class="note note--warning">
+      <span class="callout-title">For you (owner):</span> The two unique index statements that protect stock live in <code>supabase/schema_sell_and_inventory.sql</code> and must be applied to the <b>live Supabase database</b> (SQL Editor). Git/Vercel deploys only ship the app code — the schema change is manual.
+    </div>
+  </section>
+
+  <section class="card" id="settings">
+    <h2>⚙️ Settings</h2>
+    <ul class="clean">
+      <li><b>Store name &amp; description</b></li>
+      <li><b>Telegram channel</b> — where the bot auto-posts products.</li>
+      <li><b>Contact phone &amp; email</b></li>
+    </ul>
+  </section>
+
+  <!-- ============ AUTOMATION ============ -->
+  <section class="card" id="bot">
+    <h2>🤖 Telegram Bot Actions (Admin)</h2>
+    <p class="ext">The bot <b>@pixelsrbot</b> notifies you of activity and lets you act without opening the dashboard.</p>
+    <table>
+      <tr><th>Event</th><th>Buttons you see</th><th>Result</th></tr>
+      <tr><td>New product request</td><td>✅ Completed · 📪 Sold · 🚫 Unavailable</td><td>Status updated <b>+ customer notified</b></td></tr>
+      <tr><td>New order</td><td>✅ Confirm · ✔️ Complete · ❌ Cancel</td><td><b>Complete adjusts stock</b>, Cancel restores it</td></tr>
+      <tr><td>New sell request</td><td>🔍 Mark Under Review</td><td>Moves the sell-request into review</td></tr>
+    </table>
+    <div class="note note--success"><span class="callout-title">One-click stock effect:</span> Completing an order from the bot does the same inventory work as doing it in the dashboard — stock is reduced and a Sale transaction records it.</div>
+  </section>
+
+  <section class="card" id="sharing">
+    <h2>🔗 Sharing & Deep Links</h2>
+    <ul class="clean">
+      <li>Each product has a shareable link like: <code>https://t.me/pixelsrbot/Habentech?startapp=product_&lt;id&gt;</code></li>
+      <li>Tapping it opens the Mini App <b>directly on that product</b>.</li>
+      <li>The channel's <b>View Product</b> button uses the same deep link.</li>
+      <li>Back from a deep link returns <b>Home</b>, not a blank page.</li>
+      <li>Sharing works via <b>Copy Link</b>, <b>Telegram</b>, <b>WhatsApp</b>, or the native share sheet.</li>
+    </ul>
+  </section>
+
+  <section class="card" id="security">
+    <h2>🔒 Security</h2>
+    <ul class="clean">
+      <li><b>Server-side auth</b> — every mutation verifies the Telegram init data (HMAC) on the server; forged requests are rejected.</li>
+      <li><b>Admin-only</b> gated by <code>ADMIN_TELEGRAM_ID</code> — only you can open the dashboard or act on bot buttons.</li>
+      <li><b>Secrets stay server-side</b> — bot token, service-role key, webhook secret are never sent to the browser.</li>
+      <li><b>Webhook verification</b> — Telegram calls include a secret token the app validates.</li>
+      <li><b>No secrets in git</b> — <code>.env*</code> is ignored; only the placeholder <code>.env.example</code> is tracked.</li>
+    </ul>
+  </section>
+
+  <section class="card" id="deployment">
+    <h2>🚀 Deployment & Environment</h2>
+    <p class="ext">Stack: Next.js 16 (App Router/Turbopack) · React 19 · TypeScript · Supabase · Telegram Bot API, deployed on Vercel.</p>
+    <h3>Environment variables</h3>
+    <div class="keys">
+      <code>TELEGRAM_BOT_TOKEN</code> — bot token (server-only)<br>
+      <code>ADMIN_TELEGRAM_ID</code> — your numeric user ID (admin)<br>
+      <code>TELEGRAM_CHANNEL_ID</code> — channel the bot posts products to<br>
+      <code>TELEGRAM_WEBHOOK_SECRET</code> — webhook verification secret<br>
+      <code>NEXT_PUBLIC_TELEGRAM_BOT_USERNAME</code> — <b>@pixelsrbot</b><br>
+      <code>NEXT_PUBLIC_TELEGRAM_APP_NAME</code> — <b>Habentech</b><br>
+      <code>NEXT_PUBLIC_APP_URL</code> — <b>https://habentech.vercel.app</b><br>
+      <code>NEXT_PUBLIC_SUPABASE_URL</code> / <code>ANON_KEY</code> — Supabase (public)<br>
+      <code>SUPABASE_SERVICE_ROLE_KEY</code> — Supabase admin (server-only)
+    </div>
+    <h3>Deploying</h3>
+    <ul class="clean">
+      <li>Commit &amp; push → Vercel auto-deploys.</li>
+      <li><b>Database schema changes (SQL) are manual</b> — run them in Supabase; git push does not touch the DB.</li>
+    </ul>
+  </section>
+</main>
+
+</body>
+</html>

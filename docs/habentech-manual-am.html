@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ሀቤንቴክ — የመተግበሪያ መመሪያ</title>
+<style>
+  :root {
+    --bg: #f3f4f5;
+    --surface: #ffffff;
+    --border: #e6e7e9;
+    --text: #1a1b1c;
+    --muted: #6b6c6e;
+    --primary: #2f6bff;
+    --primary-dark: #142a63;
+    --accent: #ff8a3d;
+    --success: #17a672;
+    --success-bg: #e5f8f0;
+    --danger: #e2483d;
+    --danger-bg: #fdeceb;
+    --warning: #e8a600;
+    --warning-bg: #fff6e0;
+    --radius: 16px;
+    --shadow: 0 8px 24px rgba(16,20,37,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: "Noto Sans Ethiopic", "Nyala", "Abyssinica SIL", -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+
+  .sidebar {
+    width: 290px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, var(--primary-dark), #0a0e1a);
+    color: #fff;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 0;
+  }
+
+  .sidebar__brand { display: flex; align-items: center; gap: 10px; padding: 0 22px 20px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+  .sidebar__logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; }
+  .sidebar__title { font-weight: 700; font-size: 15px; margin: 0 0 2px; }
+  .sidebar__sub { font-size: 12px; color: rgba(255,255,255,0.6); margin: 0; }
+
+  .nav-section { padding: 18px 22px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; color: rgba(255,255,255,0.5); }
+  .sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 10px 22px; color: rgba(255,255,255,0.82); text-decoration: none; font-size: 13.5px; border-left: 3px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+  .sidebar nav a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .sidebar nav a.active { background: rgba(255,255,255,0.08); color: #fff; border-left-color: var(--accent); }
+  .sidebar nav a .ico { width: 18px; text-align: center; flex-shrink: 0; }
+
+  .main { flex: 1; min-width: 0; padding: 32px 40px 80px; max-width: 940px; }
+
+  .main h1 { font-size: 28px; margin: 0 0 6px; }
+  .main > p.lead { color: var(--muted); font-size: 16px; margin: 0 0 30px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
+  .card h2 { margin: 0 0 4px; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+  .card h3 { margin: 22px 0 8px; font-size: 15px; color: var(--primary-dark); }
+  .card h3:first-of-type { margin-top: 12px; }
+  .card p { margin: 6px 0; }
+  .card p.ext { font-size: 12.5px; color: var(--muted); margin: 0 0 16px; }
+
+  .step { margin-bottom: 26px; }
+  .step:last-child { margin-bottom: 0; }
+
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .tag--store { background: var(--primary); color: #fff; }
+  .tag--admin { background: var(--accent); color: #fff; }
+  .tag--bot { background: #229ed9; color: #fff; }
+  .tag--inv { background: var(--success); color: #fff; }
+
+  ul.clean { padding-left: 20px; margin: 8px 0; }
+  ul.clean li { margin: 4px 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 10px 0; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; background: var(--bg); }
+
+  .status { font-weight: 600; }
+  .status--sold { color: var(--danger); }
+  .status--ok { color: var(--success); }
+  .status--warn { color: var(--warning); }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; margin: 12px 0; }
+  .flow__step { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+  .flow__arrow { color: var(--muted); }
+
+  .note { background: var(--warning-bg); border-left: 4px solid var(--warning); border-radius: 8px; padding: 12px 14px; margin: 14px 0; font-size: 13.5px; }
+  .note--info { background: #eaf1ff; border-left-color: var(--primary); }
+  .note--success { background: var(--success-bg); border-left-color: var(--success); }
+
+  .keys { background: #0f1220; color: #dbe2ff; border-radius: 10px; padding: 14px 16px; font-family: "SF Mono", Consolas, monospace; font-size: 12.5px; overflow-x: auto; margin: 10px 0; }
+  .keys code { color: #7fb3ff; }
+
+  .callout-title { font-weight: 700; }
+
+  @media (max-width: 820px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; padding: 14px 0; }
+    .main { padding: 24px 18px 60px; }
+    .sidebar nav a { padding: 9px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar__brand">
+    <div class="sidebar__logo">ኤች</div>
+    <div>
+      <p class="sidebar__title">ሀቤንቴክ</p>
+      <p class="sidebar__sub">የመተግበሪያ መመሪያ</p>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-section">መግቢያ</div>
+    <a href="#overview" class="active"><span class="ico">🏠</span> ሀቤንቴክ ምንድነው?</a>
+    <a href="#roles"><span class="ico">👥</span> ማን ይጠቀማል</a>
+
+    <div class="nav-section">ለደንበኞች (መደብር)</div>
+    <a href="#home"><span class="ico">🛍️</span> መነሻ እና መመልከቻ</a>
+    <a href="#product-detail"><span class="ico">📱</span> የምርት ዝርዝር</a>
+    <a href="#order-request"><span class="ico">🛒</span> ትዕዛዝ / ጥያቄ</a>
+    <a href="#favorites"><span class="ico">❤️</span> የተወደዱ</a>
+    <a href="#sell-device"><span class="ico">💰</span> መሳሪያ ይሽጡ</a>
+
+    <div class="nav-section">ለአስተዳዳሪ (ዳሽቦርድ)</div>
+    <a href="#admin-overview"><span class="ico">📊</span> የአስተዳዳሪ መግቢያ</a>
+    <a href="#admin-products"><span class="ico">🏷️</span> ምርቶችን አስተዳድር</a>
+    <a href="#admin-orders"><span class="ico">📦</span> ትዕዛዞች እና ጥያቄዎች</a>
+    <a href="#admin-sell"><span class="ico">💬</span> የሽያጭ ጥያቄዎች</a>
+    <a href="#inventory"><span class="ico">📈</span> ኢንቬንቶሪ እና ስቶክ</a>
+    <a href="#settings"><span class="ico">⚙️</span> ቅንብሮች</a>
+
+    <div class="nav-section">ራስ-ሰር እና ስራ</div>
+    <a href="#bot"><span class="ico">🤖</span> የቴሌግራም ቦት ስራዎች</a>
+    <a href="#sharing"><span class="ico">🔗</span> ማጋራት እና ሊንኮች</a>
+    <a href="#security"><span class="ico">🔒</span> ደህንነት</a>
+    <a href="#deployment"><span class="ico">🚀</span> ማሰማራት እና ቅንብሮች</a>
+  </nav>
+</aside>
+
+<main class="main">
+  <h1>ሀቤንቴክ — ሙሉ የባህሪ መመሪያ</h1>
+  <p class="lead">መተግበሪያው እንዴት እንደሚሰራ ሁሉንም ነገር ይሸፍናል፦ የደንበኞች መደብር፣ የአስተዳዳሪ ዳሽቦርድ፣ እና በተለይም ኢንቬንቶሪ እና ስቶክ አስተዳደር።</p>
+
+  <!-- OverView -->
+  <section class="card" id="overview">
+    <h2>🏠 ሀቤንቴክ ምንድነው?</h2>
+    <p class="ext">በቦት <b>@pixelsrbot</b> እና በ <b>https://habentech.vercel.app</b> የሚሰራ የቴሌግራም ሚኒ አፕ የኤሌክትሮኒክስ መደብር ሲሆን የባለቤቱን ዳሽቦርድም ያካትታል።</p>
+    <p>በአንድ ኮድ ውስጥ <b>ሁለት ተሞክሮዎች</b> አሉ፦</p>
+    <ul class="clean">
+      <li><span class="tag tag--store">መደብር</span> &nbsp;የደንበኞችን መደብር ይሸፍናል — መመልከት፣ መፈለግ፣ መውደድ፣ ማዘዝ፣ መጠየቅ እና መሳሪያ መሸጥ።</li>
+      <li><span class="tag tag--admin">አስተዳዳሪ</span> &nbsp;የባለቤቱን ዳሽቦርድ ይሸፍናል — ምርቶች፣ ትዕዛዞች፣ ጥያቄዎች፣ ኢንቬንቶሪ እና ቅንብሮች።</li>
+    </ul>
+  </section>
+
+  <section class="card" id="roles">
+    <h2>👥 ማን ይጠቀማል</h2>
+    <table>
+      <tr><th>ሚና</th><th>መዳረሻ</th><th>ምን ያደርጋሉ</th></tr>
+      <tr><td><b>ደንበኛ</b></td><td>መደብር (መነሻ / ሽጥ / የተወደዱ / ትዕዛዞች)</td><td>መመልከት፣ ማዘዝ፣ መጠየቅ፣ መሳሪያ መሸጥ፣ ቅናሽ መቀበል/መቃወም።</td></tr>
+      <tr><td><b>አስተዳዳሪ (እርስዎ)</b></td><td>ሁሉም + <b>የእኔ መደብር</b> ዳሽቦርድ</td><td>ሙሉ አስተዳደር። በ <code>ADMIN_TELEGRAM_ID</code> ይታወቃል።</td></tr>
+    </table>
+    <div class="note note--info"><span class="callout-title">ጠቃሚ ምክር፦</span> አስተዳዳሪ ማለት የቴሌግራም መለያ ቁጥሩ <code>ADMIN_TELEGRAM_ID</code> እሴቱን የሚመጥን አንድ ተጠቃሚ ነው — ዳሽቦርዱን የሚያይ እሱ ብቻ ነው።</div>
+  </section>
+
+  <!-- CUSTOMER -->
+  <section class="card" id="home">
+    <h2>🛍️ መነሻ እና መመልከቻ</h2>
+    <p class="ext">ደንበኞች የሚያዩት የመጀመሪያ ገጽ።</p>
+    <div class="step">
+      <h3>ክፍሎች</h3>
+      <ul class="clean">
+        <li><b>የፍለጋ አሞሌ</b> — ምርቶችን በስም በቀጥታ ማፈላለግ።</li>
+        <li><b>ማስተዋወቂያ ባነር</b> — የአሁኑ ቅናሽ/ማስታወቂያ።</li>
+        <li><b>የምድብ ማጣሪያ</b> — ስማርትፎን፣ ላፕቶፕ፣ ታብሌት፣ መለዋወጫ፣ ስማርት ዎች፣ ጨዋታ፣ ሌላ።</li>
+        <li><b>የምርት ፍርግርግ</b> — ካርዶች በምስል፣ ዋጋ፣ የአቅርቦት ምልክት እና ♥ አዝራር።</li>
+        <li><b>የታች ዳሰሳ</b> — መነሻ / ሽጥ / የተወደዱ / ትዕዛዞች።</li>
+      </ul>
+    </div>
+    <div class="step">
+      <h3>የአቅርቦት ምልክቶች</h3>
+      <table>
+        <tr><th>ሁኔታ</th><th>ትርጉም</th></tr>
+        <tr><td>የሚገኝ (Available)</td><td>በክምችት ውስጥ ያለ እና ሊዘዝ ይችላል።</td></tr>
+        <tr><td>ዝቅተኛ ክምችት (Low Stock)</td><td>አሁንም ሊዘዝ ይችላል ግን እያለቀ ነው።</td></tr>
+        <tr><td>ከክምችት ውጭ (Out of Stock)</td><td>ተሸጧል — ማዘዝ ወይም መጠየቅ አይቻልም።</td></tr>
+        <tr><td>የተሸጠ (Sold)</td><td>ተሽጧል — ማዘዝ አይቻልም።</td></tr>
+        <tr><td>የማይገኝ (Unavailable)</td><td>ከማዘዝ/ጥያቄ ተደብቋል።</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="card" id="product-detail">
+    <h2>📱 የምርት ዝርዝር ገጽ</h2>
+    <p class="ext">ከካርዶች፣ ከቻናል ሊንኮች ወይም ከሚኒ አፕ ሊንኮች የሚከፈት የአንድ ምርት ገጽ።</p>
+    <ul class="clean">
+      <li><b>⬅ ተመለስ</b> — ወደ ቀድሞው ገጽ፣ ወይም ከቻናል/ደንብ ሊንክ ከመጡ <b>ወደ መነሻ</b> ይመልሳል።</li>
+      <li><b>ማጋራት (አውሮፕላን)</b> — የታች ዝርዝር ይከፍታል፦
+        <ul class="clean">
+          <li><b>ሊንክ ቅዳ</b> — የምርቱን ሊንክ ይቀዳል (✔ ቼክ ያሳያል)።</li>
+          <li><b>ወደ Telegram ያጋሩ</b> — ሊንኩንና የምርቱን ስም ይዞ <code>t.me/share</code> ይከፍታል።</li>
+          <li><b>ወደ WhatsApp ያጋሩ</b> — የምርት ጽሑፍና ሊንክ ይዞ <code>wa.me</code> ይከፍታል።</li>
+          <li><b>ተጨማሪ ምርጫዎች…</b> — የስርዓት ማጋሪያ (ሲደገፍ)።</li>
+        </ul>
+      </li>
+      <li><b>♥ የተወደዱ</b> — ሲጫኑ የልብ <b>ብቅ ብሎ</b> + ቀይ <b>ቅንጣት መበተን</b> ያሳያል።</li>
+      <li><b>ምስል ማዕከለ-ስዕላት</b> — በፎቶዎች መካከል ይሸበሩ፤ የተበላሹ ምስሎች መልካም ምትክ ያሳያሉ።</li>
+      <li><b>ዝርዝሮች እና መግለጫ</b> — የምርት ዝርዝር።</li>
+      <li><b>ማዘዝ / መጠየቅ አዝራሮች</b> — ከታች (ቀጣዩ ክፍል)።</li>
+    </ul>
+    <div class="note note--info"><span class="callout-title">ማስታወሻ፦</span> የታች ዳሰሳው እዚህ ተደብቋል (በንድፍ)፤ በፍላጎት ተመልሰህ ትሄዳለህ — ትኩረት በምርቱ ላይ እንዲቆይ።</div>
+  </section>
+
+  <section class="card" id="order-request">
+    <h2>🛒 ማዘዝ vs መጠየቅ</h2>
+    <p class="ext">ምርት ለማግኘት እንደ አቅርቦትና ክምችት ሁለት መንገዶች አሉ።</p>
+
+    <div class="step">
+      <h3>አሁን ማዘዝ <span class="tag tag--store">መደብር</span></h3>
+      <p>ምርቱ <b>የሚገኝ</b> ወይም <b>ዝቅተኛ ክምችት</b> ሲሆን፦</p>
+      <div class="flow">
+        <span class="flow__step">አሁን ያዝዙን ይንኩ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">ብዛት ይምረጡ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">ያረጋግጡ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">ትዕዛዝ ተፈጥሯል (በመጠባበቅ)</span><span class="flow__arrow">→</span>
+        <span class="flow__step">አስተዳዳሪ የቦት አዝራሮች ያገኛል</span>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>ምርት መጠየቅ <span class="tag tag--store">መደብር</span></h3>
+      <p>ምርቱ በቀጥታ ሊዘዝ በማይችልበት ጊዜ፦</p>
+      <div class="flow">
+        <span class="flow__step">ምርት ጠይቅ ይንኩ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">ጥያቄውን ያረጋግጡ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">አስተዳዳሪ በቦት ይነገራል</span><span class="flow__arrow">→</span>
+        <span class="flow__step">አስተዳዳሪ ሁኔታውን ይለውጣል</span><span class="flow__arrow">→</span>
+        <span class="flow__step">ደንበኛው በራስ-ሰር ይነገራል</span>
+      </div>
+      <p>በኋላ ኮዱ ለ <b>የተሸጠ / የማይገኝ / ከክምችት ውጭ</b> ምርቶች ጥያቄን ይከለክላል (409)።</p>
+    </div>
+  </section>
+
+  <section class="card" id="favorites">
+    <h2>❤️ የተወደዱ</h2>
+    <p class="ext">የሚፈልጓቸውን ምርቶች ያስቀምጡ።</p>
+    <ul class="clean">
+      <li>በማንኛውም ካርድ ወይም የምርት ገጽ ላይ ♥ ይንኩ ለማከል/ለማስወገድ።</li>
+      <li>የ <b>የተወደዱ</b> ትር ያስቀመጧቸውን ብቻ ያሳያል፣ <b>በወደድክበት ቅደም ተከተል</b>።</li>
+    </ul>
+  </section>
+
+  <section class="card" id="sell-device">
+    <h2>💰 መሳሪያ ይሽጡ (ሽጥ ትር)</h2>
+    <p class="ext">ደንበኞች ለመደብሩ የተጠቀሙ መሳሪያ ሊያቀርቡ ይችላሉ።</p>
+    <h3>በደረጃ መግቢያ</h3>
+    <div class="flow">
+      <span class="flow__step">1 · የምርት ስም &amp; ሞዴል</span><span class="flow__arrow">→</span>
+      <span class="flow__step">2 · ሁኔታ</span><span class="flow__arrow">→</span>
+      <span class="flow__step">3 · ዝርዝሮች (ስክሪን/ማህደረ ትውስታ…)</span><span class="flow__arrow">→</span>
+      <span class="flow__step">4 · የሚጠበቅ ዋጋ</span><span class="flow__arrow">→</span>
+      <span class="flow__step">5 · ፎቶዎች</span><span class="flow__arrow">→</span>
+      <span class="flow__step">6 · ክለሳ &amp; ማስገባት</span>
+    </div>
+    <ul class="clean">
+      <li><b>የፎቶ ህግ፦</b> የምስል ፋይሎች ብቻ፣ <b>በአንዱ ከፍተኛ 10MB</b>፤ አንዱን ቢያጠፋም የተቀሩት መጫን ይቀጥላሉ።</li>
+      <li>ከክለሳ በኋላ መደብሩ <b>ቅናሽ</b> ሊልክ ይችላል።</li>
+      <li>ደንበኛው በ <b>የእኔ ጥያቄዎች</b> ውስጥ ቅናሹን አይቶ <b>ተቀበል</b> ወይም <b>አትቀበል</b> ይላል።</li>
+    </ul>
+  </section>
+
+  <!-- ADMIN -->
+  <section class="card" id="admin-overview">
+    <h2>📊 የአስተዳዳሪ ዳሽቦርድ</h2>
+    <p class="ext">በቦት <b>🏬 የእኔ መደብር</b> ይገባሉ (ለአስተዳዳሪ ብቻ)።</p>
+    <div class="card" style="box-shadow:none;border:1px solid var(--border);margin-bottom:14px;">
+      <h3>የትንታኔ ካርዶች</h3>
+      <ul class="clean">
+        <li>ጠቅላላ / የሚገኙ / የተሸጡ ምርቶች</li>
+        <li>ጠቅላላ እና በመጠባበቅ ላይ ያሉ ትዕዛዞች</li>
+        <li>የምርት ጥያቄዎች እና የሽያጭ ጥያቄዎች</li>
+        <li>ጠቅላላ የክምችት አሃዶች፣ ዝቅተኛ ክምችት፣ ከክምችት ውጭ</li>
+        <li>የኢንቬንቶሪ ዋጋ</li>
+      </ul>
+    </div>
+    <p>ዳሽቦርድ ውስጥ ዳሰሳ፦ <b>አጠቃላይ · ምርቶች · ትዕዛዞች · ጥያቄዎች · ኢንቬንቶሪ · ቅንብሮች</b>።</p>
+  </section>
+
+  <section class="card" id="admin-products">
+    <h2>🏷️ ምርቶችን አስተዳድር</h2>
+    <p class="ext">ምርቶችን መፍጠር፣ ማርትዕ እና ማተም — የመደብሩ ዋና ስራ።</p>
+    <div class="step">
+      <h3>መፍጠር / ማርትዕ</h3>
+      <ul class="clean">
+        <li>ስም፣ ምድብ፣ ዋጋ፣ ገንዘብ፣ ሁኔታ፣ መግለጫ እና ዝርዝሮች ያዘጋጃሉ።</li>
+        <li><b>ብዙ ምስሎች</b> ይጭናሉ።</li>
+        <li><b>አስፈላጊ፦</b> ምስሎች በ <b>ሲቀመጡ/ሲታተሙ</b> ብቻ ወደ Telegram ይላካሉ — ከዚያ በፊት አይደለም (ባንድዊድዝ ይቆጥባል)።</li>
+      </ul>
+    </div>
+    <div class="step">
+      <h3>ወደ ቻናል ማተም</h3>
+      <p>ማተም ምርቱን በተዋቀረው ቻናል (<code>TELEGRAM_CHANNEL_ID</code>) ላይ ይለጥፋል፣ <b>ምርት ይመልከቱ</b> በሚል አዝራር ወደ ሚኒ አፕ የሚወስድ።</p>
+    </div>
+  </section>
+
+  <section class="card" id="admin-orders">
+    <h2>📦 ትዕዛዞች እና ጥያቄዎች</h2>
+    <p class="ext">ከደንበኞች የሚመጣ ሁሉም ነገር።</p>
+    <div class="step">
+      <h3>ትዕዛዞች</h3>
+      <table>
+        <tr><th>ሁኔታ</th><th>የስቶክ ውጤት</th></tr>
+        <tr><td>ተረጋግጧል (Confirmed)</td><td>ምንም ለውጥ የለም</td></tr>
+        <tr><td><b>ተጠናቅቋል (Completed)</b></td><td><span class="status status--warn">ስቶክ ይቀንሳል</span> በራስ-ሰር (የሽያጭ ግብይት ይፈጥራል)</td></tr>
+        <tr><td>ተሰርዟል / ተመልሷል</td><td><span class="status status--ok">ስቶክ ይመለሳል</span> በራስ-ሰር (የመመለሻ ግብይት ይፈጥራል)</td></tr>
+      </table>
+    </div>
+    <div class="step">
+      <h3>የምርት ጥያቄዎች</h3>
+      <p>አስተዳዳሪው ጥያቄውን <b>ተጠናቋል / ተሽጧል / የማይገኝ</b> በማድረግ — ደንበኛው በቴሌግራም በራስ-ሰር ገራጋሪ መልእክት ይነገራል።</p>
+    </div>
+  </section>
+
+  <section class="card" id="admin-sell">
+    <h2>💬 የሽያጭ ጥያቄዎች</h2>
+    <p class="ext">ደንበኞች ሊሸጡ የሚፈልጉት መሳሪያዎች።</p>
+    <ul class="clean">
+      <li>የደንበኛውን ማስታወቂያ ይመልከቱ (ሞዴል፣ ሁኔታ፣ የሚጠበቅ ዋጋ፣ ፎቶ)።</li>
+      <li><b>በክለሳ ላይ አመልክት</b> (በቦት አዝራር) ሂደቱን ለመጀመር።</li>
+      <li>ደንበኛውን <b>ቅናሽ</b> ይላኩ፤ እሱ በአፕ ውስጥ ይቀበላል/ይቃወማል።</li>
+    </ul>
+  </section>
+
+  <!-- INVENTORY -->
+  <section class="card" id="inventory">
+    <h2>📈 ኢንቬንቶሪ እና ስቶክ አስተዳደር</h2>
+    <p class="ext"><b>የአስተዳዳሪው እውነተኛ እልልል።</b> ይህ ክፍል ስቶክን፣ ግብይቶችን እና እንዴት ስቶክ ከትዕዛዞች ጋር እንደሚስማማ ያስረዳል።</p>
+
+    <div class="step">
+      <h3>ስቶክ ለእያንዳንዱ ምርት ይከታተላል</h3>
+      <ul class="clean">
+        <li>እያንዳንዱ ምርት ከጠቅላላ <b>ብዛት</b> ጋር የኢንቬንቶሪ መዝገብ አለው።</li>
+        <li>እያንዳንዱ ለውጥ እንደ <b>ግብይት</b> ይመዘገባል (የኦዲት መዝገብ)።</li>
+        <li>ስቶክ መቼም ከ <b>0</b> በታች አይወርድም (በዳታቤዝም ተፈጻሚ፣ <code>quantity &gt;= 0</code>)።</li>
+      </ul>
+      <table>
+        <tr><th>ግብይት</th><th>ውጤት</th><th>ምሳሌ</th></tr>
+        <tr><td><b>መጨመር (Add)</b></td><td><span class="status status--ok">+ ስቶክ</span></td><td>ከአቅራቢ መሙላት፣ ግዢ</td></tr>
+        <tr><td><b>ማውጣት (Remove)</b></td><td><span class="status status--warn">− ስቶክ</span></td><td>መጎዳት፣ መጥፋት፣ የእጅ ማስተካከያ</td></tr>
+        <tr><td><b>ማስተካከል (Adjust)</b></td><td>ወደ አንድ ቁጥር ያዘጋጃል</td><td>የክምችት መጠን እርማቶች</td></tr>
+        <tr><td><b>ሽያጭ (Sale)</b></td><td><span class="status status--warn">− ስቶክ</span> (በራስ-ሰር)</td><td>ትዕዛዝን ማጠናቀቅ</td></tr>
+        <tr><td><b>መመለስ (Return)</b></td><td><span class="status status--ok">+ ስቶክ</span> (በራስ-ሰር)</td><td>ትዕዛዝን መሰረዝ/መቀልበስ</td></tr>
+      </table>
+    </div>
+
+    <div class="step">
+      <h3>የእጅ ስቶክ ስራዎች (በአፕ)</h3>
+      <p>በ <b>ኢንቬንቶሪ</b> ክፍል ውስጥ ምርቱን ከፍተው፦</p>
+      <ul class="clean">
+        <li><b>ስቶክ ጨምር</b> — ብዛት፣ አማራጭ የዋጋ ውድ እና አቅራቢ። አዲሱን ድምር ያሳያል።</li>
+        <li><b>ስቶክ አውጣ</b> — ምክንያት ከዝርዝሩ ይምረጡ። <b>ተረጋግጧል</b>፦ ካለው ብዛት በላይ ማውጣት አይችሉም።</li>
+        <li><b>ስቶክ አስተካክል</b> — ብዛቱን ወደ አንድ ቁጥር ያዘጋጃሉ ከምክንያት ጋር።</li>
+      </ul>
+      <p>እያንዳንዱ ስራ ለዚያ ምርት በ <b>ግብይት ታሪክ</b> ውስጥ ይመዘገባል።</p>
+    </div>
+
+    <div class="step">
+      <h3>ትዕዛዝ ስቶክን እንዴት ይቀይራል (ራስ-ሰር)</h3>
+      <div class="flow">
+        <span class="flow__step">ትዕዛዝ ተቀመጠ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">አስተዳዳሪ <b>ጨርስ</b> ተጫነ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">የሽያጭ ግብይት ተፈጠረ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">ብዛቱ ቀነሰ</span><span class="flow__arrow">→</span>
+        <span class="flow__step">አቅርቦቱ ተዘመነ</span>
+      </div>
+      <div class="note note--info">
+        <span class="callout-title">የመከላከያ ጠባቂ፦</span> በዳታቤዝ ውስጥ የተጨመረ ልዩ ጠቋሚ አንድ ትዕዛዝ አንድ <b>ሽያጭ</b> እና አንድ <b>መመለሻ</b> ብቻ መፍጠር እንደሚችል ያረጋግጣል — አስተዳዳሪው ሁለት ጊዜ <b>ጨርስ</b> ቢጫን እንኳን። ሁለት ጊዜ መቀነስ አይቻልም።
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>አቅርቦት &amp; ዝቅተኛ ክምችት</h3>
+      <ul class="clean">
+        <li>አቅርቦቱ <b>በራስ-ሰር</b> ከስቶክ ጋር ይስማማል።</li>
+        <li>ስቶክ <b>0</b> ሲደርስ → አቅርቦቱ <b>ከክምችት ውጭ</b> ይሆናል (ማዘዝ አይቻልም)።</li>
+        <li>ከ <b>ዝቅተኛ የስቶክ ደረጃ</b> በታች → <b>ዝቅተኛ ክምችት</b> ተብሎ ማንቂያ ይችላል።</li>
+      </ul>
+    </div>
+
+    <div class="note note--warning">
+      <span class="callout-title">ለእርስዎ (ባለቤት)፦</span> ስቶክን የሚጠብቁት ሁለቱ ልዩ ጠቋሚዎች በ <code>supabase/schema_sell_and_inventory.sql</code> ውስጥ ሲሆኑ በ <b>ቀጥታ ሱፓቤዝ ዳታቤዝ</b> (SQL Editor) ላይ መተግበር አለባቸው። የቬርሰል ማሰማሪያ የአፕ ኮድን ብቻ ነው የሚልከው — የዳታቤዝ ለውጡ በእጅ ነው።
+    </div>
+  </section>
+
+  <section class="card" id="settings">
+    <h2>⚙️ ቅንብሮች</h2>
+    <ul class="clean">
+      <li><b>የመደብር ስም እና መግለጫ</b></li>
+      <li><b>የቴሌግራም ቻናል</b> — ቦቱ ምርቶችን የሚለጥፍበት።</li>
+      <li><b>የመገኛ ስልክ እና ኢሜይል</b></li>
+    </ul>
+  </section>
+
+  <!-- AUTOMATION -->
+  <section class="card" id="bot">
+    <h2>🤖 የቴሌግራም ቦት ስራዎች (አስተዳዳሪ)</h2>
+    <p class="ext">ቦቱ <b>@pixelsrbot</b> ስለእንቅስቃሴ ያሳውቅዎታል ዳሽቦርዱን ሳይከፍቱ እንዲሰሩ ያስችልዎታል።</p>
+    <table>
+      <tr><th>ክስተት</th><th>የሚያዩዋቸው አዝራሮች</th><th>ውጤት</th></tr>
+      <tr><td>አዲስ የምርት ጥያቄ</td><td>✅ ተጠናቋል · 📪 ተሽጧል · 🚫 የማይገኝ</td><td>ሁኔታው ይዘመናል <b>+ ደንበኛው ይነገራል</b></td></tr>
+      <tr><td>አዲስ ትዕዛዝ</td><td>✅ አረጋግጥ · ✔️ ጨርስ · ❌ ሰርዝ</td><td><b>ጨርስ ስቶክ ያስተካክላል፣</b> ሰርዝ ይመልሳል</td></tr>
+      <tr><td>አዲስ የሽያጭ ጥያቄ</td><td>🔍 በክለሳ ላይ አመልክት</td><td>ጥያቄውን ወደ ክለሳ ያዛውራል</td></tr>
+    </table>
+    <div class="note note--success"><span class="callout-title">በአንድ ጠቅታ የስቶክ ውጤት፦</span> ትዕዛዝን ከቦቱ ማጠናቀቅ በዳሽቦርዱ እንደማድረግ ተመሳሳይ የኢንቬንቶሪ ስራ ይሰራል — ስቶክ ይቀንሳል፣ የሽያጭ ግብይት ይመዘገባል።</div>
+  </section>
+
+  <section class="card" id="sharing">
+    <h2>🔗 ማጋራት እና ሊንኮች</h2>
+    <ul class="clean">
+      <li>እያንዳንዱ ምርት ሊጋራ የሚችል ሊንክ አለው፦ <code>https://t.me/pixelsrbot/Habentech?startapp=product_&lt;id&gt;</code></li>
+      <li>ሲነካ ሚኒ አፑን <b>በቀጥታ በዚያ ምርት ላይ</b> ይከፍታል።</li>
+      <li>የቻናሉ <b>ምርት ይመልከቱ</b> አዝራር ተመሳሳይ ሊንክ ይጠቀማል።</li>
+      <li>ከሊንክ መመለስ <b>ወደ መነሻ</b> ይመልሳል፣ ባዶ ገጽ አይደለም።</li>
+      <li>ማጋራት በ <b>ሊንክ ቅዳ</b>፣ <b>ቴሌግራም</b>፣ <b>WhatsApp</b> ወይም የስርዓት ማጋሪያ ይሰራል።</li>
+    </ul>
+  </section>
+
+  <section class="card" id="security">
+    <h2>🔒 ደህንነት</h2>
+    <ul class="clean">
+      <li><b>በሰርቨር ማረጋገጥ</b> — እያንዳንዱ ለውጥ የቴሌግራም init data ን (HMAC) በሰርቨር ያረጋግጣል።</li>
+      <li><b>ለአስተዳዳሪ ብቻ</b> — በ <code>ADMIN_TELEGRAM_ID</code>፤ ዳሽቦርዱን ወይም የቦት አዝራሮችን የሚጠቀም እርስዎ ብቻ ነው።</li>
+      <li><b>ሚስጥሮች በሰርቨር ብቻ</b> — የቦት ቶከን፣ የሰርቪስ-ሮል ቁልፍ፣ የዌብሁክ ሚስጥር ወደ ብራውዘር አይላኩም።</li>
+      <li><b>የዌብሁክ ማረጋገጫ</b> — Telegram የሚልከው እውነተኛ መሆኑን አፑ ያረጋግጣል።</li>
+      <li><b>በጂት ላይ ሚስጥር የለም</b> — <code>.env*</code> ተደብቋል፤ ቦታ ማስያዣ .env.example ብቻ ይከታተላል።</li>
+    </ul>
+  </section>
+
+  <section class="card" id="deployment">
+    <h2>🚀 ማሰማራት እና ቅንብሮች</h2>
+    <p class="ext">ቴክ፦ Next.js 16 · React 19 · TypeScript · Supabase · Telegram Bot API · በ Vercel ላይ።</p>
+    <h3>የአካባቢ ተለዋዋጮች</h3>
+    <div class="keys">
+      <code>TELEGRAM_BOT_TOKEN</code> — የቦት ቶከን (በሰርቨር ብቻ)<br>
+      <code>ADMIN_TELEGRAM_ID</code> — የእርስዎ ቁጥር (አስተዳዳሪ)<br>
+      <code>TELEGRAM_CHANNEL_ID</code> — ቦቱ ምርቶችን የሚለጥፍበት ቻናል<br>
+      <code>TELEGRAM_WEBHOOK_SECRET</code> — የዌብሁክ ማረጋገጫ ሚስጥር<br>
+      <code>NEXT_PUBLIC_TELEGRAM_BOT_USERNAME</code> — <b>@pixelsrbot</b><br>
+      <code>NEXT_PUBLIC_TELEGRAM_APP_NAME</code> — <b>Habentech</b><br>
+      <code>NEXT_PUBLIC_APP_URL</code> — <b>https://habentech.vercel.app</b><br>
+      <code>NEXT_PUBLIC_SUPABASE_URL</code> / <code>ANON_KEY</code> — Supabase (ይፋዊ)<br>
+      <code>SUPABASE_SERVICE_ROLE_KEY</code> — Supabase አስተዳዳሪ (በሰርቨር)
+    </div>
+    <h3>ማሰማራት</h3>
+    <ul class="clean">
+      <li>በ Vercel በራስ-ሰር ይሰማራል (git push + commit)።</li>
+      <li><b>የዳታቤዝ (SQL) ለውጦች በእጅ ናቸው</b> — በ Supabase ውስጥ ያሂዱ።</li>
+    </ul>
+  </section>
+</main>
+
+</body>
+</html>
