@@ -20,7 +20,7 @@
 .admin-topnav {
   max-width: 1200px;
   margin: 0 auto;
-  padding: calc(env(safe-area-inset-top, 0px) + 105px) 24px 14px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 24px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -117,7 +117,7 @@
 
 /* ---------- Dashboard layout ---------- */
 .admin-dashboard {
-  padding: calc(env(safe-area-inset-top, 0px) + 105px) 24px 24px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 24px 24px;
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -570,7 +570,7 @@
 }
 
 .admin-page-header {
-  padding: calc(env(safe-area-inset-top, 0px) + 105px) 24px 14px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 24px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;

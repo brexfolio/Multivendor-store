@@ -45,20 +45,20 @@
 
 :root {
   /* Store — Light (Default / Telegram Light Theme) */
-  --store-bg: #f8f9fb;
-  --store-surface: #ffffff;
-  --store-surface-alt: #f1f3f7;
-  --store-surface-elevated: #ffffff;
-  --store-border: rgba(0, 0, 0, 0.08);
-  --store-border-soft: rgba(0, 0, 0, 0.04);
-  --store-text: #0f172a;
-  --store-text-secondary: #475569;
-  --store-text-muted: #64748b;
-  --store-primary: #2563eb;
-  --store-primary-hover: #1d4ed8;
-  --store-primary-soft: rgba(37, 99, 235, 0.08);
+  --store-bg: #090c13;
+  --store-surface: #101522;
+  --store-surface-alt: #171e30;
+  --store-surface-elevated: #1e263d;
+  --store-border: rgba(255, 255, 255, 0.08);
+  --store-border-soft: rgba(255, 255, 255, 0.04);
+  --store-text: #f8fafc;
+  --store-text-secondary: #cbd5e1;
+  --store-text-muted: #94a3b8;
+  --store-primary: #3b82f6;
+  --store-primary-hover: #2563eb;
+  --store-primary-soft: rgba(59, 130, 246, 0.15);
   --store-primary-contrast: #ffffff;
-  --store-accent: #f97316;
+  --store-accent: #38bdf8;
   --store-success: #10b981;
   --store-success-bg: rgba(16, 185, 129, 0.1);
   --store-warning: #f59e0b;

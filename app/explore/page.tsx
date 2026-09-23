@@ -209,7 +209,7 @@ export default function MarketplaceExplorePage() {
         </div>
 
         {/* Featured Stores Section */}
-        <section style={{ marginBottom: 28 }}>
+        <section id="verified-stores" style={{ marginBottom: 28, scrollMarginTop: 80 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
             <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "#fff", display: "flex", alignItems: "center", gap: 7 }}>
               <Store size={18} color="#38bdf8" />
