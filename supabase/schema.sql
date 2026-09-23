@@ -1,5 +1,5 @@
 -- ==============================================================================
--- Habentech Multi-Vendor Telegram Marketplace — Unified Supabase Database Schema
+-- Habentech Multi-Vendor Telegram Marketplace ï¿½ Unified Supabase Database Schema
 -- Run this in the Supabase SQL Editor to set up the complete multi-tenant platform.
 -- ==============================================================================
 
@@ -385,7 +385,12 @@ begin
     values (default_tenant_id, '6413421724', 'owner')
     on conflict do nothing;
   end if;
-end $$;
+end $;
+
+-- Seed Platform Super Admin
+insert into platform_admins (telegram_user_id, name)
+values ('6413421724', 'pixelsrc')
+on conflict (telegram_user_id) do nothing;
 
 -- ============================================================
 -- 11. ROW LEVEL SECURITY (RLS) & PRIVILEGES
