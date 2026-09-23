@@ -149,7 +149,7 @@ async function handleMessage(message: NonNullable<TelegramUpdate["message"]>) {
     return;
   }
 
-  if (text.startsWith("/mystore") || text.startsWith("/admin")) {
+  if (text.startsWith("/mystore") || text.startsWith("/admin") || text.startsWith("/superadmin") || text.startsWith("/super_admin")) {
     await handleVendorPortalRouting(message.chat.id, callerId, appUrl);
     return;
   }
