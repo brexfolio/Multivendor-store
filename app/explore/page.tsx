@@ -58,7 +58,7 @@ export default function MarketplaceExplorePage() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
           <Sparkles size={16} color="#60a5fa" />
           <span style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-            Telegram Marketplace
+            Yegna Suqq • የኛ ሱቅ
           </span>
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 800, margin: "0 0 6px", color: "#fff" }}>

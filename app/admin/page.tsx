@@ -154,7 +154,7 @@ function AdminDashboardContent() {
     ? SHOP_TYPE_CONFIGS[activeTenant.shop_type] || SHOP_TYPE_CONFIGS.other
     : null;
 
-  const botUser = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "HabentechBot";
+  const botUser = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "YegnaSuqqBot";
   const appName = process.env.NEXT_PUBLIC_TELEGRAM_APP_NAME || "app";
   const storeLink = activeTenant ? `https://t.me/${botUser}/${appName}?startapp=s_${activeTenant.slug}` : "";
 

@@ -121,7 +121,7 @@ export default function VendorStorefrontPage() {
               if (navigator.share && tenant) {
                 navigator.share({
                   title: tenant.name,
-                  url: `https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "HabentechBot"}/app?startapp=s_${tenant.slug}`,
+                  url: `https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "YegnaSuqqBot"}/app?startapp=s_${tenant.slug}`,
                 }).catch(() => {});
               }
             }}

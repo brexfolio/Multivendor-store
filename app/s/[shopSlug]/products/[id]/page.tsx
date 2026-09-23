@@ -67,7 +67,7 @@ export default function ProductDetailPage() {
   }, [product]);
 
   const deepLink = useMemo(() => {
-    const botUser = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "HabentechBot";
+    const botUser = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "YegnaSuqqBot";
     const appName = process.env.NEXT_PUBLIC_TELEGRAM_APP_NAME || "app";
     return `https://t.me/${botUser}/${appName}?startapp=s_${params.shopSlug}_p_${params.id}`;
   }, [params.shopSlug, params.id]);

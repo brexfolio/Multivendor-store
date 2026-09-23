@@ -5,8 +5,8 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { LanguageProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Marketplace",
-  description: "Browse and order verified items, right inside Telegram.",
+  title: "Yegna Suqq | የኛ ሱቅ - Telegram Marketplace",
+  description: "Browse and order from verified local shops directly inside Telegram with Yegna Suqq (የኛ ሱቅ).",
 };
 
 export const viewport: Viewport = {

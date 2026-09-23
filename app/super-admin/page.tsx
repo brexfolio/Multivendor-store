@@ -35,7 +35,7 @@ export default function SuperAdminPage() {
               <Shield size={22} color="#60a5fa" />
             </div>
             <div>
-              <h1 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: 0 }}>Platform Administration</h1>
+              <h1 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: 0 }}>Yegna Suqq (የኛ ሱቅ) Admin</h1>
               <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>Super-admin global marketplace oversight</p>
             </div>
           </div>

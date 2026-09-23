@@ -89,7 +89,7 @@ export async function resolveStorePublishSettings(tenantId?: string | null): Pro
  * Builds the deep link used by the "View Product" button.
  */
 export function createProductLink(product: Pick<Product, "id" | "tenant_id">, tenantSlug?: string | null): string {
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "MarketplaceBot";
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "YegnaSuqqBot";
   const appName = process.env.NEXT_PUBLIC_TELEGRAM_APP_NAME || "app";
   const startParam = tenantSlug ? `s_${tenantSlug}_p_${product.id}` : `product_${product.id}`;
 
