@@ -5,7 +5,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { LanguageProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Habentech Marketplace",
+  title: "Marketplace",
   description: "Browse and order verified items, right inside Telegram.",
 };
 

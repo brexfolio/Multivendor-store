@@ -228,7 +228,7 @@ export default function MarketplaceExplorePage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             {products.map((p) => {
               const fileId = p.image_file_ids?.[0] || p.images?.[0]?.telegram_file_id;
-              const shopSlug = p.tenant?.slug || "habentech";
+              const shopSlug = p.tenant?.slug || "";
               return (
                 <Link
                   key={p.id}

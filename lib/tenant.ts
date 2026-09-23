@@ -101,18 +101,10 @@ export async function getAllActiveTenants(options?: {
  */
 export async function getDefaultTenant(): Promise<Tenant | null> {
   const supabase = getSupabaseAdmin();
-  const { data } = await supabase
-    .from("tenants")
-    .select("*")
-    .eq("slug", "habentech")
-    .limit(1)
-    .maybeSingle();
-
-  if (data) return data as Tenant;
-
   const { data: firstTenant } = await supabase
     .from("tenants")
     .select("*")
+    .eq("status", "active")
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();

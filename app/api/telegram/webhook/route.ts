@@ -133,7 +133,7 @@ async function handleMessage(message: NonNullable<TelegramUpdate["message"]>) {
     }, message.chat.id).catch(() => {});
 
     const welcomeMsg = [
-      `👋 Welcome${name} to <b>Habentech Marketplace</b>!`,
+      `👋 Welcome${name} to <b>Marketplace</b>!`,
       "",
       "Discover verified shops for Electronics, Fashion, Vehicles, Furniture, Beauty, Food & more.",
       "",

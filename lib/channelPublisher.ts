@@ -72,7 +72,7 @@ export async function resolveStorePublishSettings(tenantId?: string | null): Pro
         data?.publish_target === "group" || data?.publish_target === "both"
           ? data.publish_target
           : "channel",
-      slug: "habentech",
+      slug: null,
     };
   } catch {
     return {
@@ -80,7 +80,7 @@ export async function resolveStorePublishSettings(tenantId?: string | null): Pro
       groupId: null,
       groupThreadId: null,
       publishTarget: "channel",
-      slug: "habentech",
+      slug: null,
     };
   }
 }
@@ -89,7 +89,7 @@ export async function resolveStorePublishSettings(tenantId?: string | null): Pro
  * Builds the deep link used by the "View Product" button.
  */
 export function createProductLink(product: Pick<Product, "id" | "tenant_id">, tenantSlug?: string | null): string {
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "HabentechBot";
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "MarketplaceBot";
   const appName = process.env.NEXT_PUBLIC_TELEGRAM_APP_NAME || "app";
   const startParam = tenantSlug ? `s_${tenantSlug}_p_${product.id}` : `product_${product.id}`;
 
@@ -98,7 +98,7 @@ export function createProductLink(product: Pick<Product, "id" | "tenant_id">, te
     return `https://t.me/${botUsername}/${cleanApp}?startapp=${startParam}`;
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://habentech.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const cleanBase = baseUrl.replace(/\/$/, "");
   if (tenantSlug) {
     return `${cleanBase}/s/${tenantSlug}/products/${product.id}`;
