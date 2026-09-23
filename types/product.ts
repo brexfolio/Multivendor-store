@@ -1,3 +1,6 @@
+import type { PublishTarget } from "./settings";
+import type { Tenant } from "./tenant";
+
 export type ProductCategory =
   | "Smartphones"
   | "Laptops"
@@ -5,9 +8,18 @@ export type ProductCategory =
   | "Accessories"
   | "Smart Watches"
   | "Gaming"
-  | "Other";
+  | "Clothing"
+  | "Footwear"
+  | "Furniture"
+  | "Vehicles"
+  | "Food"
+  | "Beauty"
+  | "Home Materials"
+  | "Books"
+  | "Other"
+  | string;
 
-export type ProductCondition = "Brand New" | "Used" | "Refurbished";
+export type ProductCondition = "Brand New" | "Like New" | "Used" | "Refurbished";
 
 export type ProductAvailability =
   | "Available"
@@ -33,10 +45,9 @@ export interface ProductSpecification {
   display_order: number;
 }
 
-import type { PublishTarget } from "./settings";
-
 export interface Product {
   id: string;
+  tenant_id: string;
   name: string;
   category: ProductCategory;
   price: number;
@@ -45,6 +56,8 @@ export interface Product {
   description: string;
   availability: ProductAvailability;
   featured: boolean;
+  metadata: Record<string, unknown>;
+  image_file_ids: string[];
   channel_published: boolean;
   telegram_channel_id: string | null;
   telegram_channel_message_id: string | null;
@@ -58,10 +71,10 @@ export interface Product {
   group_published_at?: string | null;
   publish_target?: PublishTarget | null;
   created_at: string;
-  tenant_id?: string;
   updated_at: string;
   images?: ProductImage[];
   specifications?: ProductSpecification[];
+  tenant?: Tenant;
 }
 
 export interface ProductInput {
@@ -70,27 +83,20 @@ export interface ProductInput {
   category: ProductCategory;
   price: number;
   currency?: string;
-  condition: ProductCondition;
-  description: string;
-  availability: ProductAvailability;
-  featured: boolean;
+  condition?: ProductCondition;
+  description?: string;
+  availability?: ProductAvailability;
+  featured?: boolean;
+  metadata?: Record<string, unknown>;
+  image_file_ids?: string[];
   publish_target?: PublishTarget | null;
-  images: { telegram_file_id?: string | null; image_url: string }[];
-  specifications: { label: string; value: string }[];
+  images?: { telegram_file_id?: string | null; image_url: string }[];
+  specifications?: { label: string; value: string }[];
 }
-
-export const PRODUCT_CATEGORIES: ProductCategory[] = [
-  "Smartphones",
-  "Laptops",
-  "Tablets",
-  "Accessories",
-  "Smart Watches",
-  "Gaming",
-  "Other",
-];
 
 export const PRODUCT_CONDITIONS: ProductCondition[] = [
   "Brand New",
+  "Like New",
   "Used",
   "Refurbished",
 ];
@@ -101,4 +107,22 @@ export const PRODUCT_AVAILABILITIES: ProductAvailability[] = [
   "Sold",
   "Unavailable",
   "Out of Stock",
+];
+
+export const PRODUCT_CATEGORIES: ProductCategory[] = [
+  "Smartphones",
+  "Laptops",
+  "Tablets",
+  "Accessories",
+  "Smart Watches",
+  "Gaming",
+  "Clothing",
+  "Footwear",
+  "Furniture",
+  "Vehicles",
+  "Food",
+  "Beauty",
+  "Home Materials",
+  "Books",
+  "Other",
 ];

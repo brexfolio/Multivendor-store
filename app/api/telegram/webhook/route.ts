@@ -1,7 +1,16 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { editTelegramMessageText, answerCallbackQuery, setTelegramChatMenuButton, sendTelegramMessage } from "@/lib/telegramBot";
-import { reduceInventoryForCompletedOrder, restoreInventoryForReversedOrder } from "@/lib/inventoryService";
+import {
+  editTelegramMessageText,
+  answerCallbackQuery,
+  setTelegramChatMenuButton,
+  sendTelegramMessage,
+} from "@/lib/telegramBot";
+import {
+  reduceInventoryForCompletedOrder,
+  restoreInventoryForReversedOrder,
+} from "@/lib/inventoryService";
 import { notifyCustomerOfOrderStatus } from "@/lib/orderNotification";
+import { getTenantBySlug, getTenantsByOwner, isTenantMember, isPlatformAdmin } from "@/lib/tenant";
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -26,32 +35,11 @@ interface TelegramUpdate {
   };
 }
 
-const REQUEST_STATUS_LABELS: Record<string, string> = {
-  req_complete: "Completed",
-  req_sold: "Sold",
-  req_unavailable: "Unavailable",
-};
-
-const ORDER_STATUS_LABELS: Record<string, string> = {
-  order_confirm: "Confirmed",
-  order_complete: "Completed",
-  order_cancel: "Cancelled",
-};
-
-const SELL_REQUEST_STATUS_LABELS: Record<string, string> = {
-  sell_review: "Under Review",
-};
-
-/**
- * Single Telegram webhook endpoint (no polling). Verifies the
- * secret token Telegram echoes back on every request, then
- * dispatches `/start` commands and admin inline-button actions.
- */
 export async function POST(request: Request) {
   const secretHeader = request.headers.get("x-telegram-bot-api-secret-token");
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
 
-  if (!expectedSecret || secretHeader !== expectedSecret) {
+  if (expectedSecret && secretHeader !== expectedSecret) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -72,89 +60,145 @@ export async function POST(request: Request) {
     console.error("Telegram webhook handling failed:", error);
   }
 
-  // Telegram only cares about a 2xx response; always return one so
-  // it doesn't retry-storm us over a downstream error.
   return new Response("OK", { status: 200 });
 }
 
 async function handleMessage(message: NonNullable<TelegramUpdate["message"]>) {
   const text = message.text?.trim() ?? "";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const isAdmin = String(message.from.id) === process.env.ADMIN_TELEGRAM_ID;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+  const callerId = String(message.from.id);
   const name = message.from.first_name ? `, ${message.from.first_name}` : "";
 
   if (text.startsWith("/start")) {
-    const payload = text.slice("/start".length).trim();
-    let storeUrl = appUrl;
-    let isProductDeepLink = false;
-    let productName = "";
+    const rawPayload = text.slice("/start".length).trim();
 
-    if (payload.startsWith("product_")) {
-      const productId = payload.replace("product_", "");
-      storeUrl = `${appUrl}/products/${productId}`;
-      isProductDeepLink = true;
+    // 1. Check shop deep link: s_<shopSlug>_p_<productId>
+    if (rawPayload.startsWith("s_") && rawPayload.includes("_p_")) {
+      const match = rawPayload.match(/^s_([a-zA-Z0-9_-]+)_p_([a-fA-F0-9-]+)/);
+      if (match) {
+        const [, shopSlug, productId] = match;
+        const tenant = await getTenantBySlug(shopSlug);
+        const targetUrl = tenant
+          ? `${appUrl}/s/${tenant.slug}/products/${productId}`
+          : `${appUrl}/products/${productId}`;
 
-      try {
-        const supabase = getSupabaseAdmin();
-        const { data: p } = await supabase
-          .from("products")
-          .select("name")
-          .eq("id", productId)
-          .single();
-        if (p?.name) productName = p.name;
-      } catch {}
+        await sendTelegramMessageWithWebApp(message.chat.id, `📱 Tap below to view this product in <b>${escapeHtml(tenant?.name || "the store")}</b>:`, [
+          [{ text: "🛍 View Product", web_app: { url: targetUrl } }],
+        ]);
+        return;
+      }
     }
 
-    const mainButtonText = isProductDeepLink
-      ? `🛍 View ${productName || "Product"}`
-      : "🛒 Open Store";
+    // 2. Check vendor storefront deep link: s_<shopSlug>
+    if (rawPayload.startsWith("s_")) {
+      const shopSlug = rawPayload.slice(2);
+      const tenant = await getTenantBySlug(shopSlug);
 
-    const row = [{ text: mainButtonText, web_app: { url: storeUrl } }];
-    if (isAdmin) {
-      row.push({ text: "🏬 My Store", web_app: { url: `${appUrl}/admin` } });
+      if (tenant) {
+        const shopUrl = `${appUrl}/s/${tenant.slug}`;
+        await setTelegramChatMenuButton({
+          type: "web_app",
+          text: `🛍 ${tenant.name.slice(0, 16)}`,
+          web_app: { url: shopUrl },
+        }, message.chat.id).catch(() => {});
+
+        const welcomeText = [
+          `👋 Welcome${name}!`,
+          "",
+          `🏬 You are visiting <b>${escapeHtml(tenant.name)}</b>`,
+          tenant.description ? escapeHtml(tenant.description) : null,
+          "",
+          "Tap below to browse their collection:",
+        ].filter(Boolean).join("\n");
+
+        await sendTelegramMessageWithWebApp(message.chat.id, welcomeText, [
+          [{ text: `🛍 Browse ${tenant.name}`, web_app: { url: shopUrl } }],
+          [{ text: "🌐 Marketplace Hub", web_app: { url: `${appUrl}/explore` } }],
+        ]);
+        return;
+      }
     }
 
-    await setTelegramChatMenuButton(
-      { type: "web_app", text: "Shop Now", web_app: { url: appUrl } },
-      message.chat.id
-    ).catch(() => {});
+    // 3. Admin / Vendor portal request
+    if (rawPayload === "admin") {
+      await handleVendorPortalRouting(message.chat.id, callerId, appUrl);
+      return;
+    }
+
+    // 4. Explore / General Start
     await setTelegramChatMenuButton({
       type: "web_app",
-      text: "Shop Now",
-      web_app: { url: appUrl },
-    }).catch(() => {});
+      text: "🛒 Explore Hub",
+      web_app: { url: `${appUrl}/explore` },
+    }, message.chat.id).catch(() => {});
 
-    const welcomeMessage = isProductDeepLink
-      ? `📱 Tap below to view <b>${escapeHtml(productName || "product details")}</b> in the Habentech Mini App:`
-      : `👋 Welcome${name}! Browse the latest electronics or manage your store below.`;
+    const welcomeMsg = [
+      `👋 Welcome${name} to <b>Habentech Marketplace</b>!`,
+      "",
+      "Discover verified shops for Electronics, Fashion, Vehicles, Furniture, Beauty, Food & more.",
+      "",
+      "Tap below to start shopping or launch your own store:",
+    ].join("\n");
 
-    await sendTelegramMessageWithWebApp(message.chat.id, welcomeMessage, [row]);
+    const buttons = [
+      [{ text: "🛒 Explore Marketplace", web_app: { url: `${appUrl}/explore` } }],
+      [{ text: "🏪 Vendor Portal / Launch Shop", web_app: { url: `${appUrl}/admin` } }],
+    ];
+
+    await sendTelegramMessageWithWebApp(message.chat.id, welcomeMsg, buttons);
     return;
   }
 
-  if (text.startsWith("/store")) {
-    await sendTelegramMessageWithWebApp(message.chat.id, "🛒 Tap below to browse the store.", [
-      [{ text: "🛒 Open Store", web_app: { url: appUrl } }],
-    ]);
+  if (text.startsWith("/mystore") || text.startsWith("/admin")) {
+    await handleVendorPortalRouting(message.chat.id, callerId, appUrl);
     return;
   }
 
-  if (text.startsWith("/mystore")) {
-    if (!isAdmin) return;
-    await sendTelegramMessageWithWebApp(message.chat.id, "🏬 Tap below to manage your store.", [
-      [{ text: "🏬 My Store", web_app: { url: `${appUrl}/admin` } }],
+  if (text.startsWith("/explore") || text.startsWith("/store")) {
+    await sendTelegramMessageWithWebApp(message.chat.id, "🛒 Tap below to explore the marketplace.", [
+      [{ text: "🌐 Open Marketplace", web_app: { url: `${appUrl}/explore` } }],
     ]);
     return;
   }
 }
 
+async function handleVendorPortalRouting(chatId: number, callerId: string, appUrl: string) {
+  const isSuper = await isPlatformAdmin(callerId);
+  const userStores = await getTenantsByOwner(callerId);
+
+  if (userStores.length === 0 && !isSuper) {
+    const inviteText = [
+      "🏪 <b>Launch Your Shop on Habentech</b>",
+      "",
+      "You don't have an active store yet.",
+      "Start selling Electronics, Fashion, Vehicles, Furniture, or Food directly inside Telegram in 60 seconds!",
+    ].join("\n");
+
+    await sendTelegramMessageWithWebApp(chatId, inviteText, [
+      [{ text: "🚀 Open Your Shop Now", web_app: { url: `${appUrl}/admin?action=onboarding` } }],
+      [{ text: "🌐 Browse Marketplace", web_app: { url: `${appUrl}/explore` } }],
+    ]);
+    return;
+  }
+
+  if (userStores.length === 1 && !isSuper) {
+    const store = userStores[0];
+    await sendTelegramMessageWithWebApp(chatId, `🏬 Tap below to manage <b>${escapeHtml(store.name)}</b>:`, [
+      [{ text: `⚙️ Manage ${store.name}`, web_app: { url: `${appUrl}/admin` } }],
+    ]);
+    return;
+  }
+
+  await sendTelegramMessageWithWebApp(chatId, "🏬 Tap below to open your Vendor Dashboard & Store Switcher:", [
+    [{ text: "⚙️ Vendor Admin Dashboard", web_app: { url: `${appUrl}/admin` } }],
+  ]);
+}
+
 async function sendTelegramMessageWithWebApp(
   chatId: number,
   text: string,
-  buttons: Array<Array<{ text: string; web_app: { url: string } }>>
+  buttons: Array<Array<{ text: string; web_app?: { url: string }; url?: string }>>
 ) {
-  // Uses fetch directly since sendTelegramMessage's InlineKeyboardButton
-  // type only models `url`/`callback_data`, not `web_app`.
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return;
 
@@ -164,6 +208,7 @@ async function sendTelegramMessageWithWebApp(
     body: JSON.stringify({
       chat_id: chatId,
       text,
+      parse_mode: "HTML",
       reply_markup: { inline_keyboard: buttons },
     }),
   });
@@ -172,124 +217,64 @@ async function sendTelegramMessageWithWebApp(
 async function handleCallbackQuery(
   callbackQuery: NonNullable<TelegramUpdate["callback_query"]>
 ) {
-  const isAdmin = String(callbackQuery.from.id) === process.env.ADMIN_TELEGRAM_ID;
-  if (!isAdmin) {
-    await answerCallbackQuery(callbackQuery.id, "Only the store admin can do this.");
-    return;
-  }
-
+  const callerId = String(callbackQuery.from.id);
   const data = callbackQuery.data ?? "";
-  const [action, id] = data.split(":");
-  if (!action || !id) {
+  const parts = data.split(":");
+  const [action, orderId, tenantId] = parts;
+
+  if (!action || !orderId) {
     await answerCallbackQuery(callbackQuery.id);
     return;
   }
 
-  const supabase = getSupabaseAdmin();
-
-  if (action in REQUEST_STATUS_LABELS) {
-    const status = REQUEST_STATUS_LABELS[action];
-    await supabase.from("product_requests").update({ status }).eq("id", id);
-    await notifyCustomerOfRequestStatus(id, status);
-    await answerCallbackQuery(callbackQuery.id, `Request marked as ${status}.`);
-    await clearMessageKeyboard(callbackQuery, `✅ Status updated: ${status}`);
-    return;
+  // Permission verification
+  if (tenantId) {
+    const hasPermission = await isTenantMember(callerId, tenantId);
+    if (!hasPermission) {
+      await answerCallbackQuery(callbackQuery.id, "Unauthorized: You do not manage this store.");
+      return;
+    }
   }
 
-  if (action in ORDER_STATUS_LABELS) {
-    const nextStatus = ORDER_STATUS_LABELS[action];
+  const supabase = getSupabaseAdmin();
+
+  if (action === "order_confirm" || action === "order_complete" || action === "order_cancel") {
+    const nextStatus =
+      action === "order_confirm"
+        ? "Confirmed"
+        : action === "order_complete"
+        ? "Completed"
+        : "Cancelled";
 
     const { data: existingOrder } = await supabase
       .from("orders")
-      .select("id, status, product_id, quantity")
-      .eq("id", id)
+      .select("id, status, product_id, quantity, tenant_id")
+      .eq("id", orderId)
       .single();
 
-    await supabase.from("orders").update({ status: nextStatus }).eq("id", id);
-
-    if (existingOrder) {
-      const previousStatus = existingOrder.status;
-      const adminId = String(callbackQuery.from.id);
-      if (previousStatus !== "Completed" && nextStatus === "Completed") {
-        await reduceInventoryForCompletedOrder(id, existingOrder.product_id, existingOrder.quantity, adminId);
-      } else if (previousStatus === "Completed" && nextStatus !== "Completed") {
-        await restoreInventoryForReversedOrder(id, existingOrder.product_id, existingOrder.quantity, adminId);
-      }
+    if (!existingOrder) {
+      await answerCallbackQuery(callbackQuery.id, "Order not found.");
+      return;
     }
 
-    await notifyCustomerOfOrderStatus(id, nextStatus);
+    const previousStatus = existingOrder.status;
+    await supabase.from("orders").update({ status: nextStatus }).eq("id", orderId);
 
+    // Auto-Inventory Sync
+    if (previousStatus !== "Completed" && nextStatus === "Completed") {
+      await reduceInventoryForCompletedOrder(orderId, existingOrder.product_id, existingOrder.quantity, callerId, existingOrder.tenant_id);
+    } else if (previousStatus === "Completed" && nextStatus !== "Completed") {
+      await restoreInventoryForReversedOrder(orderId, existingOrder.product_id, existingOrder.quantity, callerId, existingOrder.tenant_id);
+    }
+
+    await notifyCustomerOfOrderStatus(orderId, nextStatus);
     await answerCallbackQuery(callbackQuery.id, `Order marked as ${nextStatus}.`);
-    await clearMessageKeyboard(callbackQuery, `✅ Status updated: ${nextStatus}`);
-    return;
-  }
 
-  if (action in SELL_REQUEST_STATUS_LABELS) {
-    const status = SELL_REQUEST_STATUS_LABELS[action];
-    await supabase.from("sell_requests").update({ status }).eq("id", id);
-    await answerCallbackQuery(callbackQuery.id, `Sell request marked as ${status}.`);
-    await clearMessageKeyboard(callbackQuery, `✅ Status updated: ${status}`);
-    return;
-  }
-
-  await answerCallbackQuery(callbackQuery.id);
-}
-
-async function notifyCustomerOfRequestStatus(requestId: string, status: string) {
-  const supabase = getSupabaseAdmin();
-
-  const { data: request } = await supabase
-    .from("product_requests")
-    .select("telegram_user_id, customer_name, product:products(name)")
-    .eq("id", requestId)
-    .single();
-
-  if (!request?.telegram_user_id) return;
-
-  const productArr = request.product as unknown as Array<{ name: string }> | { name: string } | null;
-  const productName = Array.isArray(productArr) ? productArr[0]?.name : productArr?.name;
-  const productLabel = productName?.trim() || "your requested product";
-  const customerName = request.customer_name?.trim() || "there";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const openStore = appUrl
-    ? `\n\n🛒 Tap "Shop Now" in the menu, or send /store to keep browsing.`
-    : "";
-
-  let message: string;
-  switch (status) {
-    case "Sold":
-      message = `📦 Hey ${customerName}, great news!\n\nThe product you requested — <b>${productLabel}</b> — is now available as <b>sold</b> and we'd love to hand it over to you. We'll be in touch to arrange delivery.${openStore}`;
-      break;
-    case "Completed":
-      message = `✅ Hi ${customerName}!\n\nYour request for <b>${productLabel}</b> has been marked as <b>completed</b>. We'll contact you shortly with the next steps.${openStore}`;
-      break;
-    case "Unavailable":
-      message = `🚫 Hi ${customerName}, we're sorry.\n\n<b>${productLabel}</b> is currently <b>unavailable</b>. Please check back later, or browse other products we have in stock.${openStore}`;
-      break;
-    default:
-      message = `ℹ️ Hi ${customerName}, your request for <b>${productLabel}</b> is now <b>${status}</b>.${openStore}`;
-  }
-
-  try {
-    await sendTelegramMessage(Number(request.telegram_user_id), message);
-  } catch (error) {
-    console.error("Failed to notify customer of request status:", error);
-  }
-}
-
-async function clearMessageKeyboard(
-  callbackQuery: NonNullable<TelegramUpdate["callback_query"]>,
-  statusLine: string
-) {
-  const message = callbackQuery.message;
-  if (!message) return;
-
-  const updatedText = `${message.text ?? ""}\n\n${statusLine}`;
-  try {
-    await editTelegramMessageText(message.chat.id, message.message_id, updatedText, {
-      replyMarkup: { inline_keyboard: [] },
-    });
-  } catch (error) {
-    console.error("Failed to update Telegram message after callback:", error);
+    if (callbackQuery.message) {
+      const updatedText = `${callbackQuery.message.text ?? ""}\n\n✅ Status updated: <b>${nextStatus}</b>`;
+      await editTelegramMessageText(callbackQuery.message.chat.id, callbackQuery.message.message_id, updatedText, {
+        replyMarkup: { inline_keyboard: [] },
+      });
+    }
   }
 }

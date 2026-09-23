@@ -1,4 +1,7 @@
-import type { PublishTarget } from "./settings";
+﻿import type { PublishTarget } from "./settings";
+import type { ShopType } from "@/lib/shopTypeConfig";
+
+export type { ShopType };
 
 export type TenantStatus = "active" | "suspended" | "trial";
 
@@ -9,8 +12,9 @@ export interface Tenant {
   slug: string;
   name: string;
   description: string | null;
-  logo_url: string | null;
-  banner_url: string | null;
+  shop_type: ShopType;
+  logo_file_id: string | null;
+  banner_file_id: string | null;
   owner_telegram_id: string;
   contact_phone: string | null;
   contact_email: string | null;

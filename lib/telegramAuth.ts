@@ -1,7 +1,16 @@
 import { createHmac } from "crypto";
 import type { TelegramUser } from "./telegram";
-import { checkTenantPermission, isPlatformAdmin, getTenantBySlug, getTenantById, getDefaultTenant } from "./tenant";
+import {
+  isPlatformAdmin,
+  isTenantMember,
+  isTenantOwner,
+  getTenantBySlug,
+  getTenantById,
+  getDefaultTenant,
+} from "./tenant";
 import type { Tenant } from "@/types/tenant";
+
+export { isPlatformAdmin, isTenantMember, isTenantOwner };
 
 const MAX_INIT_DATA_AGE_SECONDS = 24 * 60 * 60; // 24 hours
 
@@ -135,23 +144,21 @@ export async function verifyTenantAdmin(
     return null;
   }
 
-  const perm = await checkTenantPermission(userId, targetTenant.id, requiredRole);
-  if (!perm.allowed && !isSuper) {
+  const isMember = await isTenantMember(userId, targetTenant.id);
+  if (!isMember && !isSuper) {
     return null;
   }
 
   return {
     ...verified,
-    role: perm.role || "owner",
+    role: "owner",
     tenant: targetTenant,
     isPlatformAdmin: isSuper,
   };
 }
 
 /**
- * Extracts initData from a request: checks the
- * `X-Telegram-Init-Data` header first, then falls back to a
- * `init_data` field in a JSON body if provided by the caller.
+ * Extracts initData from a request.
  */
 export function extractInitData(request: Request, bodyInitData?: string | null): string {
   const headerValue = request.headers.get("x-telegram-init-data");

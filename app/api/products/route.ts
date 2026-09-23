@@ -1,91 +1,87 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { verifyAdminInitData, extractInitData } from "@/lib/telegramAuth";
-import { productInputSchema, formatZodError } from "@/lib/validation";
-import { publishProductById } from "@/lib/channelPublisher";
+import { verifyTenantAdmin, extractInitData } from "@/lib/telegramAuth";
 import { apiError, apiSuccess } from "@/lib/utils";
+import { publishProductToChat, resolveStorePublishSettings } from "@/lib/channelPublisher";
+import { getTenantBySlug } from "@/lib/tenant";
 
-const PRODUCT_SELECT = "*, images:product_images(*), specifications:product_specifications(*)";
+const PRODUCT_SELECT = `
+  *,
+  images:product_images(*),
+  specifications:product_specifications(*),
+  tenant:tenants(id, slug, name, shop_type, logo_file_id)
+`;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+
+  const tenantSlug = searchParams.get("tenant") || searchParams.get("shop");
+  const tenantIdParam = searchParams.get("tenant_id");
   const category = searchParams.get("category");
-  const search = searchParams.get("search")?.trim();
-  const featured = searchParams.get("featured");
+  const search = searchParams.get("search");
   const sort = searchParams.get("sort");
+  const inStockOnly = searchParams.get("in_stock") === "true";
   const minPrice = searchParams.get("min_price");
   const maxPrice = searchParams.get("max_price");
-  const inStock = searchParams.get("in_stock");
-  const initData = extractInitData(request, searchParams.get("init_data"));
-  const isAdmin = Boolean(verifyAdminInitData(initData));
+  const ids = searchParams.get("ids");
+  const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined;
 
   try {
     const supabase = getSupabaseAdmin();
-    let query = supabase
-      .from("products")
-      .select(PRODUCT_SELECT);
+    let query = supabase.from("products").select(PRODUCT_SELECT);
 
-    if (sort === "price_asc") {
-      query = query.order("price", { ascending: true });
-    } else if (sort === "price_desc") {
-      query = query.order("price", { ascending: false });
-    } else if (sort === "newest") {
-      query = query.order("created_at", { ascending: false });
-    } else {
-      query = query
-        .order("featured", { ascending: false })
-        .order("created_at", { ascending: false });
+    // Resolve tenant filter if specified
+    if (tenantIdParam) {
+      query = query.eq("tenant_id", tenantIdParam);
+    } else if (tenantSlug) {
+      const tenant = await getTenantBySlug(tenantSlug);
+      if (tenant) {
+        query = query.eq("tenant_id", tenant.id);
+      } else {
+        return apiSuccess({ products: [] });
+      }
     }
 
-    if (!isAdmin) {
-      query = query.neq("availability", "Unavailable");
-    }
-
-    if (inStock === "true") {
-      query = query.in("availability", ["Available", "Low Stock"]);
-    }
-
-    if (minPrice && !isNaN(Number(minPrice))) {
-      query = query.gte("price", Number(minPrice));
-    }
-
-    if (maxPrice && !isNaN(Number(maxPrice))) {
-      query = query.lte("price", Number(maxPrice));
+    if (ids) {
+      const idList = ids.split(",").map((id) => id.trim()).filter(Boolean);
+      query = query.in("id", idList);
     }
 
     if (category && category !== "All") {
       query = query.eq("category", category);
     }
 
-    if (featured === "true") {
-      query = query.eq("featured", true);
+    if (inStockOnly) {
+      query = query.in("availability", ["Available", "Low Stock"]);
     }
 
-    const idsParam = searchParams.get("ids");
-    if (idsParam) {
-      const ids = idsParam
-        .split(",")
-        .map((id) => id.trim())
-        .filter(Boolean);
-      if (ids.length > 0) {
-        query = query.in("id", ids);
-      }
+    if (minPrice) {
+      query = query.gte("price", Number(minPrice));
     }
 
-    if (search) {
-      let matchingIds: string[] = [];
-      const { data: specMatches } = await supabase
-        .from("product_specifications")
-        .select("product_id")
-        .or(`label.ilike.%${search}%,value.ilike.%${search}%`);
-      if (specMatches?.length) {
-        matchingIds = specMatches.map((row) => row.product_id);
-      }
+    if (maxPrice) {
+      query = query.lte("price", Number(maxPrice));
+    }
 
-      const textFilter = `name.ilike.%${search}%,category.ilike.%${search}%,description.ilike.%${search}%`;
-      const orFilter = matchingIds.length
-        ? `${textFilter},id.in.(${matchingIds.join(",")})`
-        : textFilter;
-      query = query.or(orFilter);
+    if (search && search.trim()) {
+      query = query.ilike("name", `%${search.trim()}%`);
+    }
+
+    switch (sort) {
+      case "price_asc":
+        query = query.order("price", { ascending: true });
+        break;
+      case "price_desc":
+        query = query.order("price", { ascending: false });
+        break;
+      case "newest":
+        query = query.order("created_at", { ascending: false });
+        break;
+      default:
+        query = query.order("featured", { ascending: false }).order("created_at", { ascending: false });
+    }
+
+    if (limit) {
+      query = query.limit(limit);
     }
 
     const { data, error } = await query;
@@ -94,7 +90,7 @@ export async function GET(request: Request) {
     return apiSuccess({ products: data ?? [] });
   } catch (error) {
     console.error("GET /api/products failed:", error);
-    return apiError("Unable to load products right now.", 500);
+    return apiError("Unable to load products.", 500);
   }
 }
 
@@ -107,86 +103,105 @@ export async function POST(request: Request) {
   }
 
   const initData = extractInitData(request, typeof body.init_data === "string" ? body.init_data : null);
-  const verifiedAdmin = verifyAdminInitData(initData);
-  if (!verifiedAdmin) {
-    return apiError("Unauthorized", 401);
+  const targetTenantId = typeof body.tenant_id === "string" ? body.tenant_id : null;
+
+  const auth = await verifyTenantAdmin(initData, targetTenantId, "staff");
+  if (!auth || !auth.tenant) {
+    return apiError("Unauthorized: You must be staff or owner of this store.", 401);
   }
 
-  const parsed = productInputSchema.safeParse(body);
-  if (!parsed.success) {
-    return apiError(formatZodError(parsed.error), 400);
+  const tenant = auth.tenant;
+
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  const category = typeof body.category === "string" ? body.category.trim() : "General";
+  const price = Number(body.price);
+
+  if (!name || isNaN(price) || price <= 0) {
+    return apiError("Product name and valid price are required.", 400);
   }
 
-  const input = parsed.data;
+  const metadata = (body.metadata && typeof body.metadata === "object") ? body.metadata : {};
+  const imageFileIds: string[] = Array.isArray(body.image_file_ids) ? body.image_file_ids : [];
+
   const supabase = getSupabaseAdmin();
 
   try {
-    const { data: created, error: insertError } = await supabase
+    const { data: product, error: insertError } = await supabase
       .from("products")
       .insert({
-        name: input.name,
-        category: input.category,
-        price: input.price,
-        currency: input.currency,
-        condition: input.condition,
-        description: input.description,
-        availability: input.availability,
-        featured: input.featured,
-        publish_target: input.publish_target ?? null,
+        tenant_id: tenant.id,
+        name,
+        category,
+        price,
+        currency: typeof body.currency === "string" ? body.currency : tenant.currency,
+        condition: typeof body.condition === "string" ? body.condition : "Brand New",
+        description: typeof body.description === "string" ? body.description.trim() : "",
+        availability: typeof body.availability === "string" ? body.availability : "Available",
+        featured: Boolean(body.featured),
+        metadata,
+        image_file_ids: imageFileIds,
+        publish_target: typeof body.publish_target === "string" ? body.publish_target : tenant.publish_target,
       })
-      .select("*")
+      .select(PRODUCT_SELECT)
       .single();
 
-    if (insertError || !created) throw insertError ?? new Error("Insert failed.");
-
-    if (input.images.length > 0) {
-      const { error: imagesError } = await supabase.from("product_images").insert(
-        input.images.map((image, index) => ({
-          product_id: created.id,
-          telegram_file_id: image.telegram_file_id ?? null,
-          image_url: image.image_url,
-          display_order: index,
-        }))
-      );
-      if (imagesError) throw imagesError;
+    if (insertError || !product) {
+      throw insertError ?? new Error("Insert failed");
     }
 
-    if (input.specifications.length > 0) {
-      const { error: specsError } = await supabase.from("product_specifications").insert(
-        input.specifications.map((spec, index) => ({
-          product_id: created.id,
-          label: spec.label,
-          value: spec.value,
-          display_order: index,
-        }))
-      );
-      if (specsError) throw specsError;
+    // Auto-create inventory record if stock provided
+    const initialStock = Number(body.quantity);
+    if (!isNaN(initialStock) && initialStock >= 0) {
+      await supabase.from("inventory").insert({
+        tenant_id: tenant.id,
+        product_id: product.id,
+        quantity: initialStock,
+        minimum_stock_level: Number(body.minimum_stock_level) || 2,
+        cost_price: body.cost_price ? Number(body.cost_price) : null,
+        selling_price: price,
+        supplier: typeof body.supplier === "string" ? body.supplier : null,
+        storage_location: typeof body.storage_location === "string" ? body.storage_location : null,
+      });
     }
 
+    // Attempt channel publishing if configured
     let channelWarning: string | null = null;
-    let finalProduct = null;
-    try {
-      const result = await publishProductById(created.id);
-      finalProduct = result.product;
-      if (result.warning) {
-        channelWarning = result.warning;
-        console.error("Publish warning:", result.warning);
+    const publishTarget = (product.publish_target || tenant.publish_target);
+    if (publishTarget && publishTarget !== "none") {
+      try {
+        const settings = await resolveStorePublishSettings(tenant.id);
+        const targetChat = publishTarget === "group" ? settings.groupId : settings.channelId;
+        if (targetChat) {
+          const pubResult = await publishProductToChat(
+            product,
+            targetChat,
+            settings.groupThreadId,
+            tenant.slug,
+            tenant.shop_type
+          );
+          if (pubResult.success) {
+            await supabase
+              .from("products")
+              .update({
+                channel_published: true,
+                telegram_channel_id: pubResult.channelId,
+                telegram_channel_message_id: pubResult.messageId,
+                telegram_channel_media_message_ids: pubResult.mediaMessageIds,
+                channel_published_at: new Date().toISOString(),
+              })
+              .eq("id", product.id);
+          } else {
+            channelWarning = pubResult.error || "Channel publish failed";
+          }
+        }
+      } catch (pubErr: any) {
+        channelWarning = pubErr.message || "Failed to publish to Telegram channel";
       }
-    } catch (publishError) {
-      channelWarning = "Product saved successfully, but failed to publish to Telegram.";
-      console.error("Publish threw:", publishError);
-      const { data } = await supabase.from("products").select(PRODUCT_SELECT).eq("id", created.id).single();
-      finalProduct = data;
     }
 
-    if (!finalProduct) {
-      const { data: fallbackProduct } = await supabase.from("products").select(PRODUCT_SELECT).eq("id", created.id).single();
-      finalProduct = fallbackProduct;
-    }
-
-    return apiSuccess({ product: finalProduct, channelWarning }, 201);
-  } catch (error) {
+    return apiSuccess({ product, channelWarning }, 201);
+  } catch (error: any) {
     console.error("POST /api/products failed:", error);
-    return apiError("Unable to create product right now.", 500);
+    return apiError(error.message || "Failed to create product.", 500);
   }
 }

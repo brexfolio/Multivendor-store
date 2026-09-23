@@ -1,21 +1,27 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { verifyTelegramInitData, verifyAdminInitData, extractInitData } from "@/lib/telegramAuth";
-import { orderInputSchema, formatZodError } from "@/lib/validation";
-import { sendTelegramMessage } from "@/lib/telegramBot";
-import { apiError, apiSuccess, getCustomerDisplayName, formatPrice } from "@/lib/utils";
+import { verifyTelegramInitData, verifyTenantAdmin, extractInitData } from "@/lib/telegramAuth";
+import { apiError, apiSuccess, getCustomerDisplayName } from "@/lib/utils";
 import { getInventoryByProduct } from "@/lib/inventoryService";
+import { notifyTenantStaffOfOrder } from "@/lib/orderNotification";
+import { getTenantBySlug } from "@/lib/tenant";
 
-const ORDER_SELECT = "*, product:products(id, name, price, currency)";
+const ORDER_SELECT = `
+  *,
+  product:products(id, name, price, currency, image_file_ids, tenant:tenants(id, slug, name))
+`;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const initData = extractInitData(request, searchParams.get("init_data"));
   const status = searchParams.get("status");
+  const tenantSlug = searchParams.get("tenant") || searchParams.get("shop");
+  const tenantIdParam = searchParams.get("tenant_id");
 
-  const isAdmin = Boolean(verifyAdminInitData(initData));
-  const verifiedUser = isAdmin ? null : verifyTelegramInitData(initData);
+  // Check if caller is vendor admin
+  const tenantAuth = await verifyTenantAdmin(initData, tenantIdParam || tenantSlug, "staff");
+  const verifiedCustomer = tenantAuth ? null : verifyTelegramInitData(initData);
 
-  if (!isAdmin && !verifiedUser) {
+  if (!tenantAuth && !verifiedCustomer) {
     return apiError("Unauthorized", 401);
   }
 
@@ -23,10 +29,19 @@ export async function GET(request: Request) {
     const supabase = getSupabaseAdmin();
     let query = supabase.from("orders").select(ORDER_SELECT).order("created_at", { ascending: false });
 
-    if (status) query = query.eq("status", status);
-    if (!isAdmin && verifiedUser) {
-      query = query.eq("telegram_user_id", String(verifiedUser.user.id));
+    if (tenantAuth && tenantAuth.tenant) {
+      // Vendor sees their own store orders
+      query = query.eq("tenant_id", tenantAuth.tenant.id);
+    } else if (verifiedCustomer) {
+      // Customer sees only orders they placed
+      query = query.eq("telegram_user_id", String(verifiedCustomer.user.id));
+      if (tenantSlug) {
+        const tenant = await getTenantBySlug(tenantSlug);
+        if (tenant) query = query.eq("tenant_id", tenant.id);
+      }
     }
+
+    if (status) query = query.eq("status", status);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -47,14 +62,18 @@ export async function POST(request: Request) {
   }
 
   const initData = extractInitData(request, typeof body.init_data === "string" ? body.init_data : null);
-  const parsed = orderInputSchema.safeParse({ ...body, init_data: initData });
-  if (!parsed.success) {
-    return apiError(formatZodError(parsed.error), 400);
-  }
-
-  const verified = verifyTelegramInitData(parsed.data.init_data);
+  const verified = verifyTelegramInitData(initData);
   if (!verified) {
     return apiError("Unauthorized", 401);
+  }
+
+  const productId = typeof body.product_id === "string" ? body.product_id : "";
+  const quantity = Number(body.quantity) || 1;
+  const customerPhone = typeof body.customer_phone === "string" ? body.customer_phone.trim() : null;
+  const deliveryAddress = typeof body.delivery_address === "string" ? body.delivery_address.trim() : null;
+
+  if (!productId || quantity < 1) {
+    return apiError("Product ID and quantity are required.", 400);
   }
 
   const supabase = getSupabaseAdmin();
@@ -62,8 +81,8 @@ export async function POST(request: Request) {
   try {
     const { data: product, error: productError } = await supabase
       .from("products")
-      .select("id, name, price, currency, availability")
-      .eq("id", parsed.data.product_id)
+      .select("id, tenant_id, name, price, currency, availability")
+      .eq("id", productId)
       .single();
 
     if (productError || !product) {
@@ -74,87 +93,57 @@ export async function POST(request: Request) {
       return apiError("This product is not currently available to order.", 409);
     }
 
-    const inventory = await getInventoryByProduct(product.id);
-    if (inventory && parsed.data.quantity > inventory.quantity) {
+    // Inventory check
+    const inventory = await getInventoryByProduct(product.id, product.tenant_id);
+    if (inventory && quantity > inventory.quantity) {
       return apiError(
         inventory.quantity > 0
-          ? `Only ${inventory.quantity} unit(s) of this product are in stock.`
+          ? `Only ${inventory.quantity} unit(s) are currently in stock.`
           : "This product is out of stock.",
         409
       );
     }
 
-    const totalPrice = Number(product.price) * parsed.data.quantity;
+    const totalPrice = Number(product.price) * quantity;
     const customerName = getCustomerDisplayName(verified.user);
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
+        tenant_id: product.tenant_id,
         product_id: product.id,
         telegram_user_id: String(verified.user.id),
         customer_name: customerName,
         username: verified.user.username ?? null,
-        quantity: parsed.data.quantity,
+        customer_phone: customerPhone,
+        delivery_address: deliveryAddress,
+        quantity,
         total_price: totalPrice,
         status: "Pending",
       })
       .select(ORDER_SELECT)
       .single();
 
-    if (orderError || !order) throw orderError ?? new Error("Order insert failed.");
+    if (orderError || !order) {
+      throw orderError ?? new Error("Order creation failed");
+    }
 
-    await notifyAdminOfOrder({
+    // Notify all owners/managers of this specific store via Telegram
+    await notifyTenantStaffOfOrder({
       orderId: order.id,
+      tenantId: product.tenant_id,
       customerName,
+      customerPhone,
       username: verified.user.username ?? null,
       productName: product.name,
-      quantity: parsed.data.quantity,
+      quantity,
       totalPrice,
       currency: product.currency,
     });
 
     return apiSuccess({ order }, 201);
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST /api/orders failed:", error);
     return apiError("Unable to place order right now.", 500);
-  }
-}
-
-async function notifyAdminOfOrder(details: {
-  orderId: string;
-  customerName: string;
-  username: string | null;
-  productName: string;
-  quantity: number;
-  totalPrice: number;
-  currency: string;
-}) {
-  const adminId = process.env.ADMIN_TELEGRAM_ID;
-  if (!adminId) return;
-
-  const message = [
-    "🛒 <b>NEW ORDER</b>",
-    "",
-    `Customer: ${details.customerName}`,
-    details.username ? `Username: @${details.username}` : "Username: (none)",
-    `Product: ${details.productName}`,
-    `Quantity: ${details.quantity}`,
-    `Total: ${formatPrice(details.totalPrice, details.currency)}`,
-  ].join("\n");
-
-  try {
-    await sendTelegramMessage(adminId, message, {
-      replyMarkup: {
-        inline_keyboard: [
-          [
-            { text: "✅ Confirm", callback_data: `order_confirm:${details.orderId}` },
-            { text: "✔️ Complete", callback_data: `order_complete:${details.orderId}` },
-          ],
-          [{ text: "❌ Cancel", callback_data: `order_cancel:${details.orderId}` }],
-        ],
-      },
-    });
-  } catch (error) {
-    console.error("Failed to notify admin of new order:", error);
   }
 }

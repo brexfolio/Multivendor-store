@@ -1,26 +1,36 @@
-import { verifyAdminInitData, extractInitData } from "@/lib/telegramAuth";
+import { verifyTelegramInitData, extractInitData, isPlatformAdmin } from "@/lib/telegramAuth";
+import { getTenantsByOwner } from "@/lib/tenant";
 import { apiError, apiSuccess } from "@/lib/utils";
 
-/**
- * Lets the Admin Dashboard frontend confirm — server-side — that
- * the current Telegram user is the configured admin before
- * rendering any admin UI or data. The frontend must never decide
- * this on its own from client-visible Telegram user info.
- */
 export async function POST(request: Request) {
   let body: Record<string, unknown> = {};
   try {
     body = await request.json();
-  } catch {
-    // fall through — initData may arrive via header only
-  }
+  } catch {}
 
   const initData = extractInitData(request, typeof body.init_data === "string" ? body.init_data : null);
-  const verified = verifyAdminInitData(initData);
+  let verified = verifyTelegramInitData(initData);
+
+  // Allow dev fallback in development
+  if (!verified && process.env.NODE_ENV === "development") {
+    verified = {
+      user: { id: Number(process.env.ADMIN_TELEGRAM_ID || 1084144032), first_name: "Dev Admin" },
+      authDate: Math.floor(Date.now() / 1000),
+    };
+  }
 
   if (!verified) {
     return apiError("Unauthorized", 401);
   }
 
-  return apiSuccess({ isAdmin: true });
+  const userId = String(verified.user.id);
+  const isSuper = await isPlatformAdmin(userId);
+  const stores = await getTenantsByOwner(userId);
+
+  return apiSuccess({
+    isAdmin: true,
+    isSuperAdmin: isSuper,
+    storeCount: stores.length,
+    user: verified.user,
+  });
 }
