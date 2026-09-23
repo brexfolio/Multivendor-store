@@ -36,6 +36,14 @@ export default function TelegramImage({
       return;
     }
 
+    // Direct URL support (e.g. Cloudflare R2 CDN or external URL)
+    if (fileId.startsWith("http://") || fileId.startsWith("https://")) {
+      setResolvedUrl(fileId);
+      setIsLoading(false);
+      setHasError(false);
+      return;
+    }
+
     let isMounted = true;
     setIsLoading(true);
     setHasError(false);

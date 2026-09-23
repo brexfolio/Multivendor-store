@@ -25,9 +25,18 @@ export async function GET(
   }
 
   const cleanFileId = fileId.trim();
-  const now = Date.now();
   const { searchParams } = new URL(request.url);
   const wantsRedirect = searchParams.get("redirect") === "true";
+
+  // If already a direct URL (e.g. R2), redirect or return immediately
+  if (cleanFileId.startsWith("http://") || cleanFileId.startsWith("https://")) {
+    if (wantsRedirect) {
+      return NextResponse.redirect(cleanFileId, { status: 302, headers: EDGE_CACHE_HEADERS });
+    }
+    return NextResponse.json({ url: cleanFileId }, { headers: EDGE_CACHE_HEADERS });
+  }
+
+  const now = Date.now();
 
   // 1. Check in-memory cache
   const cached = mediaCache.get(cleanFileId);
