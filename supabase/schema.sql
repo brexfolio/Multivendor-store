@@ -1,5 +1,5 @@
-﻿-- ==============================================================================
--- Habentech Multi-Vendor Telegram Marketplace — Unified Supabase Database Schema
+-- ==============================================================================
+-- Habentech Multi-Vendor Telegram Marketplace � Unified Supabase Database Schema
 -- Run this in the Supabase SQL Editor to set up the complete multi-tenant platform.
 -- ==============================================================================
 
@@ -378,11 +378,11 @@ begin
     insert into tenants (
       slug, name, description, shop_type, owner_telegram_id, currency
     ) values (
-      'habentech', 'Haben Tech', 'Premium electronics, smartphones, and accessories.', 'electronics', '1084144032', 'ETB'
+      'habentech', 'Haben Tech', 'Premium electronics, smartphones, and accessories.', 'electronics', '6413421724', 'ETB'
     ) returning id into default_tenant_id;
 
     insert into tenant_members (tenant_id, telegram_user_id, role)
-    values (default_tenant_id, '1084144032', 'owner')
+    values (default_tenant_id, '6413421724', 'owner')
     on conflict do nothing;
   end if;
 end $$;
