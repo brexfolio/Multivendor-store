@@ -110,7 +110,7 @@ export default function VendorOnboardingWizard({ onCompleted, onCancel }: Vendor
 
   // Final Success Screen
   if (createdTenant) {
-    const botUser = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "HabentechBot";
+    const botUser = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "YegnaSuqqBot";
     const appName = process.env.NEXT_PUBLIC_TELEGRAM_APP_NAME || "app";
     const storeDeepLink = `https://t.me/${botUser}/${appName}?startapp=s_${createdTenant.slug}`;
 
@@ -253,7 +253,7 @@ export default function VendorOnboardingWizard({ onCompleted, onCancel }: Vendor
               required
             />
             <span style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "block" }}>
-              Store link: t.me/HabentechBot/app?startapp=s_{slug || "your-handle"}
+              Store link: t.me/YegnaSuqqBot/app?startapp=s_{slug || "your-handle"}
             </span>
           </div>
 

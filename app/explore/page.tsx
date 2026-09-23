@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Sparkles, Store, ShoppingBag, ArrowRight } from "lucide-react";
+import { Search, Sparkles, Store, ShoppingBag, ArrowRight, CheckCircle2, X } from "lucide-react";
 import Header from "@/components/store/Header";
 import TelegramImage from "@/components/ui/TelegramImage";
 import { SHOP_TYPE_CONFIGS, ALL_SHOP_TYPES, type ShopType } from "@/lib/shopTypeConfig";
@@ -26,7 +26,7 @@ export default function MarketplaceExplorePage() {
 
     const productParams = new URLSearchParams();
     if (search.trim()) productParams.set("search", search.trim());
-    productParams.set("limit", "16");
+    productParams.set("limit", "20");
 
     Promise.all([
       apiGet<{ tenants: Tenant[] }>(`/api/tenants?${shopParams.toString()}`).catch(() => ({ tenants: [] })),
@@ -40,282 +40,418 @@ export default function MarketplaceExplorePage() {
   }, [selectedType, search]);
 
   return (
-    <div className="store-shell">
+    <div className="store-shell" style={{ background: "#0a0d14", minHeight: "100vh", color: "#f8fafc" }}>
       <Header />
 
-      {/* Hero Marketplace Banner */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #182236 0%, #0d121f 100%)",
-          borderRadius: 16,
-          padding: "20px 18px",
-          marginTop: 10,
-          marginBottom: 16,
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <Sparkles size={16} color="#60a5fa" />
-          <span style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-            Yegna Suqq • የኛ ሱቅ
-          </span>
-        </div>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: "0 0 6px", color: "#fff" }}>
-          Discover Verified Shops
-        </h1>
-        <p style={{ fontSize: 13, color: "#94a3b8", margin: 0, lineHeight: 1.4 }}>
-          Electronics, Fashion, Vehicles, Furniture, Grocery & more directly inside Telegram.
-        </p>
-      </div>
-
-      {/* Global Search Bar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          backgroundColor: "#161b26",
-          borderRadius: 12,
-          padding: "0 12px",
-          height: 44,
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          marginBottom: 16,
-        }}
-      >
-        <Search size={18} color="#64748b" style={{ marginRight: 8 }} />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search products or stores..."
+      <main className="store-container" style={{ padding: "0 16px 32px", maxWidth: 640, margin: "0 auto" }}>
+        {/* Hero Ambient Banner */}
+        <section
+          className="ys-card ys-glow-blue"
           style={{
-            background: "transparent",
-            border: "none",
-            outline: "none",
-            color: "#fff",
-            fontSize: 14,
-            width: "100%",
-          }}
-        />
-      </div>
-
-      {/* Shop Category Filter Chips */}
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          overflowX: "auto",
-          paddingBottom: 8,
-          marginBottom: 20,
-          scrollbarWidth: "none",
-        }}
-      >
-        <button
-          onClick={() => setSelectedType("all")}
-          style={{
-            padding: "8px 14px",
-            borderRadius: 999,
-            fontSize: 12.5,
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-            border: "none",
-            cursor: "pointer",
-            backgroundColor: selectedType === "all" ? "#2f6bff" : "#1a2233",
-            color: "#fff",
-            transition: "background 0.2s",
+            position: "relative",
+            background: "linear-gradient(145deg, #131b2e 0%, #0c111d 100%)",
+            borderRadius: 20,
+            padding: "22px 18px",
+            marginTop: 12,
+            marginBottom: 18,
+            border: "1px solid rgba(56, 189, 248, 0.2)",
+            overflow: "hidden",
           }}
         >
-          🌟 All Categories
-        </button>
-        {ALL_SHOP_TYPES.map((typeKey) => {
-          const cfg = SHOP_TYPE_CONFIGS[typeKey];
-          const isSelected = selectedType === typeKey;
-          return (
-            <button
-              key={typeKey}
-              onClick={() => setSelectedType(typeKey)}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 999,
-                fontSize: 12.5,
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                border: "none",
-                cursor: "pointer",
-                backgroundColor: isSelected ? "#2f6bff" : "#1a2233",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                transition: "background 0.2s",
-              }}
-            >
-              <span>{cfg.icon}</span>
-              <span>{cfg.label.split(" ")[0]}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Featured Shops Section */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#fff", display: "flex", alignItems: "center", gap: 6 }}>
-            <Store size={18} color="#60a5fa" />
-            <span>Featured Stores ({shops.length})</span>
-          </h2>
-        </div>
-
-        {shops.length === 0 ? (
-          <div style={{ padding: 20, textAlign: "center", color: "#64748b", background: "#161b26", borderRadius: 12 }}>
-            No stores found in this category.
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
-            {shops.map((shop) => {
-              const cfg = SHOP_TYPE_CONFIGS[shop.shop_type] || SHOP_TYPE_CONFIGS.other;
-              return (
-                <Link
-                  key={shop.id}
-                  href={`/s/${shop.slug}`}
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
-                  <div
-                    style={{
-                      background: "#161b26",
-                      borderRadius: 14,
-                      padding: 12,
-                      border: "1px solid rgba(255, 255, 255, 0.06)",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      textAlign: "center",
-                      transition: "transform 0.15s, border-color 0.15s",
-                    }}
-                  >
-                    <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", marginBottom: 8, background: "#1f293d" }}>
-                      <TelegramImage fileId={shop.logo_file_id} alt={shop.name} fallbackIcon={<Store size={26} color="#60a5fa" />} />
-                    </div>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: "#fff", width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {shop.name}
-                    </span>
-                    <span style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                      <span>{cfg.icon}</span>
-                      <span>{cfg.label.split(" ")[0]}</span>
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Trending Products Section */}
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#fff", display: "flex", alignItems: "center", gap: 6 }}>
-            <ShoppingBag size={18} color="#34d399" />
-            <span>Trending Listings</span>
-          </h2>
-        </div>
-
-        {products.length === 0 ? (
-          <div style={{ padding: 20, textAlign: "center", color: "#64748b", background: "#161b26", borderRadius: 12 }}>
-            No products available yet.
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-            {products.map((p) => {
-              const fileId = p.image_file_ids?.[0] || p.images?.[0]?.telegram_file_id;
-              const shopSlug = p.tenant?.slug || "";
-              return (
-                <Link
-                  key={p.id}
-                  href={`/s/${shopSlug}/products/${p.id}`}
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
-                  <div
-                    style={{
-                      background: "#161b26",
-                      borderRadius: 14,
-                      overflow: "hidden",
-                      border: "1px solid rgba(255, 255, 255, 0.06)",
-                    }}
-                  >
-                    <div style={{ width: "100%", height: 130, background: "#1f293d", position: "relative" }}>
-                      <TelegramImage fileId={fileId} alt={p.name} />
-                      <span
-                        style={{
-                          position: "absolute",
-                          bottom: 6,
-                          left: 6,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: "2px 6px",
-                          borderRadius: 4,
-                          backgroundColor: "rgba(0, 0, 0, 0.75)",
-                          color: "#93c5fd",
-                        }}
-                      >
-                        {p.tenant?.name || "Shop"}
-                      </span>
-                    </div>
-                    <div style={{ padding: 10 }}>
-                      <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {p.name}
-                      </p>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#38bdf8" }}>
-                        {formatPrice(p.price, p.currency)}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Footer Vendor CTA */}
-      <div
-        style={{
-          marginTop: 30,
-          marginBottom: 40,
-          background: "linear-gradient(135deg, #1e3a8a 0%, #1e1b4b 100%)",
-          borderRadius: 16,
-          padding: 18,
-          textAlign: "center",
-          border: "1px solid rgba(96, 165, 250, 0.2)",
-        }}
-      >
-        <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 6px", color: "#fff" }}>
-          Own a business?
-        </h3>
-        <p style={{ fontSize: 12.5, color: "#cbd5e1", margin: "0 0 14px", lineHeight: 1.4 }}>
-          Launch your own Telegram Mini App store in 60 seconds with zero coding.
-        </p>
-        <Link href="/admin?action=onboarding" style={{ textDecoration: "none" }}>
-          <button
+          {/* Ambient Glow Orb */}
+          <div
             style={{
-              padding: "10px 20px",
-              borderRadius: 10,
-              background: "#3b82f6",
-              color: "#fff",
-              border: "none",
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
+              position: "absolute",
+              top: -40,
+              right: -40,
+              width: 140,
+              height: 140,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <span
+              className="ys-chip ys-chip--primary"
+              style={{ padding: "3px 9px", fontSize: 10.5, textTransform: "uppercase" }}
+            >
+              <Sparkles size={11} />
+              <span>Yegna Suqq • የኛ ሱቅ</span>
+            </span>
+          </div>
+
+          <h1
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              margin: "0 0 6px",
+              color: "#ffffff",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.25,
             }}
           >
-            <span>Open Your Shop</span>
-            <ArrowRight size={15} />
+            Discover Top Ethiopian Shops
+          </h1>
+
+          <p style={{ fontSize: 13, color: "#94a3b8", margin: 0, lineHeight: 1.45 }}>
+            Fashion, Electronics, Furniture, Vehicles, Beauty & more, verified and ready to order inside Telegram.
+          </p>
+        </section>
+
+        {/* Global Search Bar */}
+        <div
+          className="ys-glass"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            borderRadius: 14,
+            padding: "0 14px",
+            height: 48,
+            marginBottom: 16,
+            transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+          }}
+        >
+          <Search size={18} color="#94a3b8" style={{ marginRight: 10, flexShrink: 0 }} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search stores, brands, or items..."
+            style={{
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              color: "#fff",
+              fontSize: 14,
+              width: "100%",
+              fontWeight: 500,
+            }}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#94a3b8",
+                padding: 4,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Category Pill Scroller */}
+        <div
+          className="ys-hide-scrollbar"
+          style={{
+            display: "flex",
+            gap: 8,
+            overflowX: "auto",
+            paddingBottom: 4,
+            marginBottom: 24,
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <button
+            onClick={() => setSelectedType("all")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 9999,
+              fontSize: 12.5,
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              border: selectedType === "all" ? "1px solid #38bdf8" : "1px solid rgba(255, 255, 255, 0.08)",
+              cursor: "pointer",
+              backgroundColor: selectedType === "all" ? "#1e293b" : "rgba(22, 27, 38, 0.7)",
+              color: selectedType === "all" ? "#38bdf8" : "#cbd5e1",
+              boxShadow: selectedType === "all" ? "0 2px 10px rgba(56, 189, 248, 0.2)" : "none",
+              transition: "all 0.2s ease",
+            }}
+          >
+            ✨ All Categories
           </button>
-        </Link>
-      </div>
+          {ALL_SHOP_TYPES.map((typeKey) => {
+            const cfg = SHOP_TYPE_CONFIGS[typeKey];
+            const isSelected = selectedType === typeKey;
+            return (
+              <button
+                key={typeKey}
+                onClick={() => setSelectedType(typeKey)}
+                style={{
+                  padding: "8px 15px",
+                  borderRadius: 9999,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                  border: isSelected ? "1px solid #38bdf8" : "1px solid rgba(255, 255, 255, 0.08)",
+                  cursor: "pointer",
+                  backgroundColor: isSelected ? "#1e293b" : "rgba(22, 27, 38, 0.7)",
+                  color: isSelected ? "#38bdf8" : "#94a3b8",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <span>{cfg.icon}</span>
+                <span>{cfg.label.split(" ")[0]}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Featured Stores Section */}
+        <section style={{ marginBottom: 28 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "#fff", display: "flex", alignItems: "center", gap: 7 }}>
+              <Store size={18} color="#38bdf8" />
+              <span>Verified Stores</span>
+              <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>({shops.length})</span>
+            </h2>
+          </div>
+
+          {isLoading ? (
+            <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 6 }}>
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="ys-card"
+                  style={{ width: 140, height: 130, flexShrink: 0, background: "#131722", opacity: 0.6 }}
+                />
+              ))}
+            </div>
+          ) : shops.length === 0 ? (
+            <div
+              className="ys-card"
+              style={{
+                padding: "24px 16px",
+                textAlign: "center",
+                color: "#94a3b8",
+                fontSize: 13,
+                background: "rgba(22, 27, 38, 0.5)",
+              }}
+            >
+              No shops registered in this category yet.
+            </div>
+          ) : (
+            <div
+              className="ys-hide-scrollbar"
+              style={{
+                display: "flex",
+                gap: 12,
+                overflowX: "auto",
+                paddingBottom: 6,
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              {shops.map((shop) => {
+                const cfg = SHOP_TYPE_CONFIGS[shop.shop_type] || SHOP_TYPE_CONFIGS.other;
+                return (
+                  <Link
+                    key={shop.id}
+                    href={`/s/${shop.slug}`}
+                    style={{ textDecoration: "none", color: "inherit", flexShrink: 0 }}
+                  >
+                    <div
+                      className="ys-card ys-card--interactive"
+                      style={{
+                        width: 140,
+                        padding: "16px 12px 14px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center",
+                        background: "#121722",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 54,
+                          height: 54,
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                          marginBottom: 10,
+                          background: "#1c2436",
+                          border: "2px solid rgba(56, 189, 248, 0.3)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        <TelegramImage
+                          fileId={shop.logo_file_id}
+                          alt={shop.name}
+                          fallbackIcon={<Store size={24} color="#38bdf8" />}
+                        />
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 3, maxWidth: "100%", justifyContent: "center" }}>
+                        <span
+                          style={{
+                            fontSize: 13.5,
+                            fontWeight: 700,
+                            color: "#fff",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {shop.name}
+                        </span>
+                        <CheckCircle2 size={13} color="#38bdf8" style={{ flexShrink: 0 }} />
+                      </div>
+
+                      <span
+                        className="ys-chip"
+                        style={{ marginTop: 6, padding: "2px 8px", fontSize: 10.5 }}
+                      >
+                        <span>{cfg.icon}</span>
+                        <span>{cfg.label.split(" ")[0]}</span>
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Trending Listings Section */}
+        <section>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "#fff", display: "flex", alignItems: "center", gap: 7 }}>
+              <ShoppingBag size={18} color="#34d399" />
+              <span>Trending Listings</span>
+              <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>({products.length})</span>
+            </h2>
+          </div>
+
+          {isLoading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="ys-card"
+                  style={{ height: 210, background: "#131722", opacity: 0.6 }}
+                />
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <div
+              className="ys-card"
+              style={{
+                padding: "36px 16px",
+                textAlign: "center",
+                color: "#94a3b8",
+                fontSize: 13.5,
+                background: "rgba(22, 27, 38, 0.5)",
+              }}
+            >
+              No products found. Check back soon!
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {products.map((p) => {
+                const fileId = p.image_file_ids?.[0] || p.images?.[0]?.telegram_file_id;
+                const shopSlug = p.tenant?.slug || "";
+                return (
+                  <Link
+                    key={p.id}
+                    href={shopSlug ? `/s/${shopSlug}/products/${p.id}` : `/products/${p.id}`}
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    <div className="ys-card ys-card--interactive" style={{ background: "#121722", height: "100%", display: "flex", flexDirection: "column" }}>
+                      <div style={{ width: "100%", height: 140, background: "#182030", position: "relative", overflow: "hidden" }}>
+                        <TelegramImage
+                          fileId={fileId}
+                          alt={p.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+
+                        {p.tenant?.name && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: 8,
+                              left: 8,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "2px 7px",
+                              borderRadius: 6,
+                              backgroundColor: "rgba(10, 13, 20, 0.8)",
+                              backdropFilter: "blur(8px)",
+                              color: "#e2e8f0",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              maxWidth: "85%",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {p.tenant.name}
+                          </span>
+                        )}
+
+                        {p.availability !== "Available" && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              bottom: 8,
+                              right: 8,
+                              fontSize: 9.5,
+                              fontWeight: 700,
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              backgroundColor: "rgba(220, 38, 38, 0.85)",
+                              color: "#fff",
+                            }}
+                          >
+                            {p.availability}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ padding: "10px 12px 12px", display: "flex", flexDirection: "column", flex: 1, justifyContent: "space-between" }}>
+                        <p
+                          style={{
+                            margin: "0 0 6px",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#fff",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {p.name}
+                        </p>
+
+                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "auto" }}>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: "#38bdf8" }}>
+                            {formatPrice(p.price, p.currency)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 }

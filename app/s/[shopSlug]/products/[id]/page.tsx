@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Truck,
   Store,
+  Sparkles,
 } from "lucide-react";
 import Header from "@/components/store/Header";
 import TelegramImage from "@/components/ui/TelegramImage";
@@ -88,9 +89,11 @@ export default function ProductDetailPage() {
         quantity,
         customer_phone: phone.trim(),
         delivery_address: address.trim(),
+        customer_name: user?.first_name || "Customer",
+        telegram_user_id: user ? String(user.id) : null,
       });
 
-      showToast("success", "Order sent to vendor successfully!");
+      showToast("success", "Order placed! The store owner has been notified.");
       setShowOrderModal(false);
       router.push(`/s/${params.shopSlug}/orders`);
     } catch (err: any) {
@@ -101,14 +104,20 @@ export default function ProductDetailPage() {
   }
 
   if (isLoading) {
-    return <div className="store-shell" style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Loading product...</div>;
+    return (
+      <div className="store-shell" style={{ background: "#0a0d14", minHeight: "100vh", padding: 40, textAlign: "center", color: "#64748b" }}>
+        Loading product...
+      </div>
+    );
   }
 
   if (!product) {
     return (
-      <div className="store-shell" style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>
+      <div className="store-shell" style={{ background: "#0a0d14", minHeight: "100vh", padding: 40, textAlign: "center", color: "#94a3b8" }}>
         <h2>Product not found</h2>
-        <Link href={`/s/${params.shopSlug}`}>Back to store</Link>
+        <Link href={`/s/${params.shopSlug}`} style={{ color: "#38bdf8", textDecoration: "none" }}>
+          Back to store
+        </Link>
       </div>
     );
   }
@@ -116,161 +125,248 @@ export default function ProductDetailPage() {
   const isAvailable = product.availability === "Available" || product.availability === "Low Stock";
 
   return (
-    <div className="store-shell" style={{ paddingBottom: 90 }}>
+    <div className="store-shell" style={{ background: "#0a0d14", minHeight: "100vh", color: "#f8fafc", paddingBottom: 110 }}>
       <Header />
 
-      {/* Top Navigation Bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, marginBottom: 12 }}>
-        <Link
-          href={`/s/${params.shopSlug}`}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#94a3b8", textDecoration: "none", fontSize: 13, fontWeight: 600 }}
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Store</span>
-        </Link>
+      <main className="store-container" style={{ padding: "0 16px 36px", maxWidth: 640, margin: "0 auto" }}>
+        {/* Navigation Bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, marginBottom: 14 }}>
+          <Link
+            href={`/s/${params.shopSlug}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: "#94a3b8",
+              textDecoration: "none",
+              fontSize: 13,
+              fontWeight: 700,
+              background: "rgba(22, 27, 38, 0.6)",
+              padding: "6px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <ArrowLeft size={15} />
+            <span>Store</span>
+          </Link>
 
-        <button
-          onClick={() => {
-            if (navigator.share) {
-              navigator.share({ title: product.name, url: deepLink }).catch(() => {});
-            } else {
-              navigator.clipboard.writeText(deepLink);
-              showToast("success", "Link copied!");
-            }
+          <button
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({ title: product.name, url: deepLink }).catch(() => {});
+              } else {
+                navigator.clipboard.writeText(deepLink);
+                showToast("success", "Link copied to clipboard!");
+              }
+            }}
+            style={{
+              background: "rgba(22, 27, 38, 0.6)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 10,
+              color: "#fff",
+              padding: "6px 12px",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              cursor: "pointer",
+              fontSize: 12.5,
+              fontWeight: 600,
+            }}
+          >
+            <Share2 size={14} color="#38bdf8" />
+            <span>Share</span>
+          </button>
+        </div>
+
+        {/* Hero Image Carousel */}
+        <section
+          className="ys-card"
+          style={{
+            background: "#121722",
+            borderRadius: 20,
+            overflow: "hidden",
+            marginBottom: 16,
           }}
-          style={{ background: "#161b26", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#fff", padding: "6px 10px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12 }}
         >
-          <Share2 size={14} />
-          <span>Share</span>
-        </button>
-      </div>
+          <div style={{ width: "100%", height: 300, background: "#182030", position: "relative" }}>
+            <TelegramImage
+              fileId={allFileIds[activeImageIndex]}
+              alt={product.name}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
 
-      {/* Image Gallery */}
-      <div style={{ background: "#161b26", borderRadius: 18, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 16 }}>
-        <div style={{ width: "100%", height: 280, background: "#1e293b", position: "relative" }}>
-          <TelegramImage
-            fileId={allFileIds[activeImageIndex]}
-            alt={product.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+            {allFileIds.length > 1 && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 12,
+                  left: 0,
+                  right: 0,
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+              >
+                {allFileIds.map((_, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setActiveImageIndex(idx)}
+                    style={{
+                      width: idx === activeImageIndex ? 22 : 6,
+                      height: 6,
+                      borderRadius: 3,
+                      background: idx === activeImageIndex ? "#38bdf8" : "rgba(255, 255, 255, 0.4)",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
           {allFileIds.length > 1 && (
-            <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 6 }}>
-              {allFileIds.map((_, idx) => (
+            <div className="ys-hide-scrollbar" style={{ display: "flex", gap: 8, padding: 12, overflowX: "auto" }}>
+              {allFileIds.map((fId, idx) => (
                 <div
                   key={idx}
                   onClick={() => setActiveImageIndex(idx)}
                   style={{
-                    width: idx === activeImageIndex ? 20 : 6,
-                    height: 6,
-                    borderRadius: 3,
-                    background: idx === activeImageIndex ? "#38bdf8" : "rgba(255,255,255,0.4)",
+                    width: 58,
+                    height: 58,
+                    borderRadius: 10,
+                    overflow: "hidden",
+                    border: idx === activeImageIndex ? "2px solid #38bdf8" : "2px solid transparent",
+                    flexShrink: 0,
                     cursor: "pointer",
-                    transition: "all 0.2s",
+                    boxShadow: idx === activeImageIndex ? "0 0 10px rgba(56, 189, 248, 0.3)" : "none",
                   }}
-                />
+                >
+                  <TelegramImage fileId={fId} alt={`Thumb ${idx}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {allFileIds.length > 1 && (
-          <div style={{ display: "flex", gap: 8, padding: 12, overflowX: "auto" }}>
-            {allFileIds.map((fId, idx) => (
-              <div
-                key={idx}
-                onClick={() => setActiveImageIndex(idx)}
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  border: idx === activeImageIndex ? "2px solid #38bdf8" : "2px solid transparent",
-                  flexShrink: 0,
-                  cursor: "pointer",
-                }}
-              >
-                <TelegramImage fileId={fId} alt={`Thumb ${idx}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
-            ))}
+        {/* Title, Pricing & Status Card */}
+        <section
+          className="ys-card"
+          style={{
+            background: "#121722",
+            borderRadius: 18,
+            padding: "16px 18px",
+            marginBottom: 14,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+            <span style={{ fontSize: 24, fontWeight: 800, color: "#38bdf8", letterSpacing: "-0.01em" }}>
+              {formatPrice(product.price, product.currency)}
+            </span>
+            <span
+              className={isAvailable ? "ys-chip ys-chip--success" : "ys-chip"}
+              style={{
+                fontSize: 11,
+                padding: "3px 9px",
+                background: isAvailable ? "rgba(34, 197, 94, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                color: isAvailable ? "#4ade80" : "#f87171",
+                borderColor: isAvailable ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)",
+              }}
+            >
+              {product.availability}
+            </span>
           </div>
-        )}
-      </div>
 
-      {/* Price & Name Header */}
-      <div style={{ background: "#161b26", borderRadius: 16, padding: 16, border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: "#38bdf8" }}>
-            {formatPrice(product.price, product.currency)}
-          </span>
-          <span
+          <h1 style={{ fontSize: 19, fontWeight: 800, color: "#fff", margin: "0 0 12px", lineHeight: 1.35 }}>
+            {product.name}
+          </h1>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <span className="ys-chip">
+              Category: <strong style={{ color: "#fff", marginLeft: 4 }}>{product.category}</strong>
+            </span>
+            {product.condition && (
+              <span className="ys-chip">
+                Condition: <strong style={{ color: "#fff", marginLeft: 4 }}>{product.condition}</strong>
+              </span>
+            )}
+          </div>
+        </section>
+
+        {/* Dynamic Specifications Matrix */}
+        {metadataList.length > 0 && (
+          <section
+            className="ys-card"
             style={{
-              fontSize: 11,
-              fontWeight: 700,
-              padding: "4px 8px",
-              borderRadius: 6,
-              background: isAvailable ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-              color: isAvailable ? "#34d399" : "#f87171",
+              background: "#121722",
+              borderRadius: 18,
+              padding: "16px 18px",
+              marginBottom: 14,
             }}
           >
-            {product.availability}
-          </span>
-        </div>
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: "#fff", margin: "0 0 12px", letterSpacing: "0.02em", textTransform: "uppercase" }}>
+              Specifications
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+              {metadataList.map(([key, val]) => {
+                const def = FIELD_DEFINITIONS[key];
+                const label = def?.label || key.charAt(0).toUpperCase() + key.slice(1);
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      background: "#182030",
+                      borderRadius: 12,
+                      padding: "10px 12px",
+                      border: "1px solid rgba(255,255,255,0.04)",
+                    }}
+                  >
+                    <p style={{ margin: "0 0 3px", fontSize: 11, color: "#94a3b8" }}>{label}</p>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff" }}>{String(val)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-        <h1 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 10px", lineHeight: 1.3 }}>
-          {product.name}
-        </h1>
+        {/* Product Description */}
+        {product.description && (
+          <section
+            className="ys-card"
+            style={{
+              background: "#121722",
+              borderRadius: 18,
+              padding: "16px 18px",
+              marginBottom: 16,
+            }}
+          >
+            <h3 style={{ fontSize: 14, fontWeight: 800, color: "#fff", margin: "0 0 8px", textTransform: "uppercase" }}>
+              Description
+            </h3>
+            <p style={{ margin: 0, fontSize: 13.5, color: "#cbd5e1", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+              {product.description}
+            </p>
+          </section>
+        )}
+      </main>
 
-        <div style={{ display: "flex", gap: 12, fontSize: 12, color: "#94a3b8" }}>
-          <span>Category: <strong style={{ color: "#cbd5e1" }}>{product.category}</strong></span>
-          {product.condition && <span>Condition: <strong style={{ color: "#cbd5e1" }}>{product.condition}</strong></span>}
-        </div>
-      </div>
-
-      {/* Dynamic Metadata Attributes */}
-      {metadataList.length > 0 && (
-        <div style={{ background: "#161b26", borderRadius: 16, padding: 16, border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: "0 0 12px" }}>Product Specifications</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
-            {metadataList.map(([key, val]) => {
-              const def = FIELD_DEFINITIONS[key];
-              const label = def?.label || key.charAt(0).toUpperCase() + key.slice(1);
-              return (
-                <div key={key} style={{ background: "#1f293d", borderRadius: 8, padding: 10 }}>
-                  <p style={{ margin: "0 0 2px", fontSize: 11, color: "#94a3b8" }}>{label}</p>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff" }}>{String(val)}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Description */}
-      {product.description && (
-        <div style={{ background: "#161b26", borderRadius: 16, padding: 16, border: "1px solid rgba(255,255,255,0.08)", marginBottom: 16 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: "0 0 8px" }}>Description</h3>
-          <p style={{ margin: 0, fontSize: 13, color: "#cbd5e1", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
-            {product.description}
-          </p>
-        </div>
-      )}
-
-      {/* Bottom Sticky Action Bar */}
+      {/* Floating Bottom Sticky Action Bar */}
       <div
+        className="ys-glass"
         style={{
           position: "fixed",
           bottom: 0,
           left: 0,
           right: 0,
-          background: "#0f172a",
-          borderTop: "1px solid rgba(255,255,255,0.1)",
-          padding: "12px 16px",
+          padding: "12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px)",
           display: "flex",
           gap: 12,
           zIndex: 100,
-          maxWidth: 600,
+          maxWidth: 640,
           margin: "0 auto",
+          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
         <button
@@ -278,22 +374,26 @@ export default function ProductDetailPage() {
           onClick={() => setShowOrderModal(true)}
           style={{
             flex: 1,
-            height: 48,
-            borderRadius: 12,
-            background: isAvailable ? "#2563eb" : "#334155",
+            height: 50,
+            borderRadius: 14,
+            background: isAvailable
+              ? "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)"
+              : "#334155",
             color: "#fff",
             border: "none",
             fontSize: 15,
-            fontWeight: 700,
+            fontWeight: 800,
             cursor: isAvailable ? "pointer" : "not-allowed",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
+            boxShadow: isAvailable ? "0 4px 16px rgba(37, 99, 235, 0.35)" : "none",
+            transition: "transform 0.15s ease",
           }}
         >
           <ShoppingCart size={18} />
-          <span>{isAvailable ? "Order Now" : "Out of Stock"}</span>
+          <span>{isAvailable ? "Order Directly" : "Out of Stock"}</span>
         </button>
       </div>
 
@@ -305,63 +405,77 @@ export default function ProductDetailPage() {
       >
         <form onSubmit={handlePlaceOrder} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", display: "block", marginBottom: 6 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 6 }}>
               Quantity
             </label>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <button
-                type="button"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                style={{ width: 36, height: 36, borderRadius: 8, background: "#1e293b", color: "#fff", border: "none", fontSize: 18, cursor: "pointer" }}
-              >
-                -
-              </button>
-              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity(quantity + 1)}
-                style={{ width: 36, height: 36, borderRadius: 8, background: "#1e293b", color: "#fff", border: "none", fontSize: 18, cursor: "pointer" }}
-              >
-                +
-              </button>
-            </div>
+            <input
+              type="number"
+              min={1}
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              style={{
+                width: "100%",
+                height: 44,
+                borderRadius: 10,
+                background: "#1c2436",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#fff",
+                padding: "0 12px",
+                fontSize: 14,
+              }}
+            />
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", display: "block", marginBottom: 6 }}>
-              Contact Phone Number *
+            <label style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 6 }}>
+              Contact Phone (Required)
             </label>
-            <Input
+            <input
               type="tel"
-              placeholder="e.g. 0911223344"
+              required
+              placeholder="e.g. +251 91 123 4567"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              required
+              style={{
+                width: "100%",
+                height: 44,
+                borderRadius: 10,
+                background: "#1c2436",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#fff",
+                padding: "0 12px",
+                fontSize: 14,
+              }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", display: "block", marginBottom: 6 }}>
-              Delivery Address / Pickup Notes (Optional)
+            <label style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", display: "block", marginBottom: 6 }}>
+              Delivery Address / Specific Location (Optional)
             </label>
-            <Input
-              type="text"
-              placeholder="e.g. Bole, near Edna Mall, Addis Ababa"
+            <textarea
+              rows={2}
+              placeholder="e.g. Bole Medhanialem, Addis Ababa"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              style={{
+                width: "100%",
+                borderRadius: 10,
+                background: "#1c2436",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#fff",
+                padding: "10px 12px",
+                fontSize: 13,
+                resize: "none",
+              }}
             />
           </div>
 
-          <div style={{ background: "#1e293b", borderRadius: 10, padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 13, color: "#94a3b8" }}>Total Price:</span>
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#38bdf8" }}>
-              {formatPrice(product.price * quantity, product.currency)}
-            </span>
+          <div style={{ marginTop: 10 }}>
+            <Button type="submit" variant="primary" loading={isSubmitting} block>
+              Confirm Order ({formatPrice(product.price * quantity, product.currency)})
+            </Button>
           </div>
-
-          <Button type="submit" disabled={isSubmitting} style={{ height: 46, fontSize: 14 }}>
-            {isSubmitting ? "Sending Order..." : "Confirm & Send Order"}
-          </Button>
         </form>
       </Modal>
     </div>
