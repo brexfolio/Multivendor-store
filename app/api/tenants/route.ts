@@ -1,21 +1,29 @@
 import { NextResponse } from "next/server";
 import {
   getAllActiveTenants,
+  getAllTenantsAdmin,
   getTenantsByOwner,
   createTenant,
   isSlugReserved,
   sanitizeSlug,
 } from "@/lib/tenant";
-import { verifyTelegramInitData, extractInitData } from "@/lib/telegramAuth";
+import { verifyTelegramInitData, extractInitData, isPlatformAdmin } from "@/lib/telegramAuth";
 import type { ShopType } from "@/lib/shopTypeConfig";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const myStores = searchParams.get("my") === "true";
+  const forAdmin = searchParams.get("admin") === "true";
 
   if (myStores) {
     const initData = extractInitData(request, searchParams.get("init_data"));
-    const verified = verifyTelegramInitData(initData);
+    let verified = verifyTelegramInitData(initData);
+    if (!verified && process.env.NODE_ENV === "development") {
+      verified = {
+        user: { id: Number(process.env.ADMIN_TELEGRAM_ID || 1084144032), first_name: "Dev Admin" },
+        authDate: Math.floor(Date.now() / 1000),
+      };
+    }
     if (!verified) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -27,6 +35,29 @@ export async function GET(request: Request) {
   const shopType = searchParams.get("shop_type");
   const search = searchParams.get("search");
   const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined;
+
+  if (forAdmin) {
+    const initData = extractInitData(request, searchParams.get("init_data"));
+    let verified = verifyTelegramInitData(initData);
+    if (!verified && process.env.NODE_ENV === "development") {
+      verified = {
+        user: { id: Number(process.env.ADMIN_TELEGRAM_ID || 1084144032), first_name: "Dev Admin" },
+        authDate: Math.floor(Date.now() / 1000),
+      };
+    }
+    if (!verified) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isSuper = await isPlatformAdmin(String(verified.user.id));
+    if (!isSuper) {
+      return NextResponse.json({ error: "Forbidden: Super-admin only" }, { status: 403 });
+    }
+
+    const status = searchParams.get("status");
+    const tenants = await getAllTenantsAdmin({ status, shopType, search, limit });
+    return NextResponse.json({ tenants });
+  }
 
   const tenants = await getAllActiveTenants({ shopType, search, limit });
   return NextResponse.json({ tenants });

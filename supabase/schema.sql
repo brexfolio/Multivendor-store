@@ -51,7 +51,10 @@ create table if not exists tenants (
   custom_bot_username text,
 
   -- Status & Settings
-  status text default 'active' check (status in ('active', 'suspended', 'trial')),
+  status text default 'pending_approval' check (status in ('pending_approval', 'active', 'suspended', 'trial', 'rejected')),
+  rejection_reason text,
+  reviewed_at timestamptz,
+  reviewed_by text,
   currency text default 'ETB',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

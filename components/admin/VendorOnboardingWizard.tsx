@@ -11,6 +11,8 @@ import {
   Share2,
   Copy,
   ExternalLink,
+  Clock,
+  ShieldCheck,
 } from "lucide-react";
 import { SHOP_TYPE_CONFIGS, ALL_SHOP_TYPES, type ShopType, sanitizeSlug } from "@/lib/shopTypeConfig";
 import { apiPost, apiUpload, ApiError } from "@/lib/apiClient";
@@ -100,7 +102,7 @@ export default function VendorOnboardingWizard({ onCompleted, onCancel }: Vendor
       });
 
       setCreatedTenant(res.tenant);
-      showToast("success", "🎉 Store launched successfully!");
+      showToast("success", "Application submitted for platform approval!");
     } catch (err: any) {
       showToast("error", err instanceof ApiError ? err.message : "Failed to create store");
     } finally {
@@ -108,34 +110,106 @@ export default function VendorOnboardingWizard({ onCompleted, onCancel }: Vendor
     }
   }
 
-  // Final Success Screen
+  // Final Application Submitted Screen
   if (createdTenant) {
     const botUser = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "YegnaSuqqBot";
     const appName = process.env.NEXT_PUBLIC_TELEGRAM_APP_NAME || "app";
     const storeDeepLink = `https://t.me/${botUser}/${appName}?startapp=s_${createdTenant.slug}`;
 
     return (
-      <div style={{ padding: "30px 16px", textAlign: "center", color: "#fff" }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(16, 185, 129, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-          <CheckCircle2 size={36} color="#34d399" />
+      <div style={{ padding: "24px 16px", textAlign: "center", color: "#fff" }}>
+        <div
+          style={{
+            width: 68,
+            height: 68,
+            borderRadius: "50%",
+            background: "rgba(245, 158, 11, 0.15)",
+            border: "1px solid rgba(245, 158, 11, 0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 16px",
+          }}
+        >
+          <Clock size={36} color="#fbbf24" />
         </div>
-        <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>Congratulations!</h2>
-        <p style={{ fontSize: 14, color: "#94a3b8", margin: "0 0 24px" }}>
-          Your store <strong>{createdTenant.name}</strong> is live on Telegram.
+
+        <span
+          style={{
+            fontSize: 11.5,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            color: "#fbbf24",
+            background: "rgba(245, 158, 11, 0.1)",
+            padding: "4px 12px",
+            borderRadius: 20,
+            display: "inline-block",
+            marginBottom: 8,
+          }}
+        >
+          Application Under Review
+        </span>
+
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>
+          Application Submitted!
+        </h2>
+        <p style={{ fontSize: 13.5, color: "#94a3b8", margin: "0 0 20px", lineHeight: 1.5 }}>
+          Your application for <strong>{createdTenant.name}</strong> has been received and is awaiting platform approval.
         </p>
 
-        <div style={{ background: "#161b26", borderRadius: 14, padding: 16, border: "1px solid rgba(255,255,255,0.08)", marginBottom: 24, textAlign: "left" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase" }}>Your Store Deep Link</span>
+        {/* Informative Review Status Box */}
+        <div
+          style={{
+            background: "#161b26",
+            borderRadius: 14,
+            padding: 16,
+            border: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: 20,
+            textAlign: "left",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
+        >
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <ShieldCheck size={18} color="#34d399" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, margin: "0 0 2px", color: "#fff" }}>
+                Quality & Verification
+              </p>
+              <p style={{ fontSize: 12, color: "#94a3b8", margin: 0, lineHeight: 1.4 }}>
+                Administrators review all new stores to verify contacts and channel settings before opening to shoppers.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <Clock size={18} color="#60a5fa" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, margin: "0 0 2px", color: "#fff" }}>
+                Fast Notification
+              </p>
+              <p style={{ fontSize: 12, color: "#94a3b8", margin: 0, lineHeight: 1.4 }}>
+                You will receive a Telegram message directly from the bot once your store is approved.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Reserved Store Handle Preview */}
+        <div style={{ background: "#161b26", borderRadius: 14, padding: 14, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 20, textAlign: "left" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", textTransform: "uppercase" }}>Reserved Store Link</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
             <input
               readOnly
               value={storeDeepLink}
-              style={{ flex: 1, background: "#1f293d", border: "none", color: "#fff", padding: "8px 10px", borderRadius: 8, fontSize: 12 }}
+              style={{ flex: 1, background: "#1f293d", border: "none", color: "#94a3b8", padding: "8px 10px", borderRadius: 8, fontSize: 12 }}
             />
             <button
               onClick={() => {
                 navigator.clipboard.writeText(storeDeepLink);
-                showToast("success", "Deep link copied!");
+                showToast("success", "Link copied!");
               }}
               style={{ background: "#2563eb", border: "none", color: "#fff", padding: "8px 12px", borderRadius: 8, cursor: "pointer" }}
             >
@@ -145,7 +219,7 @@ export default function VendorOnboardingWizard({ onCompleted, onCancel }: Vendor
         </div>
 
         <Button onClick={() => onCompleted(createdTenant)} style={{ width: "100%", height: 48, fontSize: 15 }}>
-          Go to Vendor Dashboard
+          Go to Store Dashboard
         </Button>
       </div>
     );

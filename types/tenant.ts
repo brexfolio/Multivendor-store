@@ -1,9 +1,9 @@
-﻿import type { PublishTarget } from "./settings";
+import type { PublishTarget } from "./settings";
 import type { ShopType } from "@/lib/shopTypeConfig";
 
 export type { ShopType };
 
-export type TenantStatus = "active" | "suspended" | "trial";
+export type TenantStatus = "pending_approval" | "active" | "suspended" | "trial" | "rejected";
 
 export type TenantRole = "owner" | "manager" | "staff";
 
@@ -27,6 +27,9 @@ export interface Tenant {
   custom_bot_token?: string | null;
   custom_bot_username?: string | null;
   status: TenantStatus;
+  rejection_reason?: string | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
   currency: string;
   created_at: string;
   updated_at: string;

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "./supabase";
-import type { Tenant, TenantMember, PlatformAdmin, ShopType } from "@/types/tenant";
+import { sendTelegramMessage } from "./telegramBot";
+import type { Tenant, TenantMember, PlatformAdmin, ShopType, TenantStatus } from "@/types/tenant";
 
 export const RESERVED_SLUGS = new Set([
   "admin",
@@ -78,6 +79,42 @@ export async function getAllActiveTenants(options?: {
     .select("*")
     .eq("status", "active")
     .order("created_at", { ascending: false });
+
+  if (options?.shopType && options.shopType !== "all") {
+    query = query.eq("shop_type", options.shopType);
+  }
+
+  if (options?.search && options.search.trim()) {
+    query = query.ilike("name", `%${options.search.trim()}%`);
+  }
+
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+
+  const { data, error } = await query;
+  if (error || !data) return [];
+  return data as Tenant[];
+}
+
+/**
+ * Gets tenants for the super-admin directory, with status filtering.
+ */
+export async function getAllTenantsAdmin(options?: {
+  status?: string | null;
+  shopType?: string | null;
+  search?: string | null;
+  limit?: number;
+}): Promise<Tenant[]> {
+  const supabase = getSupabaseAdmin();
+  let query = supabase
+    .from("tenants")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (options?.status && options.status !== "all") {
+    query = query.eq("status", options.status);
+  }
 
   if (options?.shopType && options.shopType !== "all") {
     query = query.eq("shop_type", options.shopType);
@@ -270,7 +307,7 @@ export async function createTenant(input: CreateTenantInput): Promise<Tenant> {
       logo_file_id: input.logo_file_id ?? null,
       banner_file_id: input.banner_file_id ?? null,
       currency: input.currency || "ETB",
-      status: "active",
+      status: "pending_approval",
     })
     .select("*")
     .single();
@@ -286,5 +323,84 @@ export async function createTenant(input: CreateTenantInput): Promise<Tenant> {
     role: "owner",
   });
 
+  // Notify Super Admin of new store pending approval
+  if (process.env.ADMIN_TELEGRAM_ID) {
+    sendTelegramMessage(
+      process.env.ADMIN_TELEGRAM_ID,
+      `📢 <b>New Shop Application Pending Approval!</b>\n\n` +
+      `🏪 <b>Store:</b> ${newTenant.name}\n` +
+      `🔗 <b>Slug:</b> <code>${newTenant.slug}</code>\n` +
+      `🏷️ <b>Category:</b> ${newTenant.shop_type}\n` +
+      `👤 <b>Owner Telegram ID:</b> <code>${newTenant.owner_telegram_id}</code>\n\n` +
+      `Log in to the Super Admin panel to review and approve.`
+    ).catch((err) => {
+      console.warn("Could not notify super-admin about new tenant:", err);
+    });
+  }
+
   return newTenant as Tenant;
+}
+
+/**
+ * Updates a tenant's approval status (active, rejected, suspended) and notifies the owner.
+ */
+export async function updateTenantStatus(
+  tenantId: string,
+  status: TenantStatus,
+  options?: {
+    rejection_reason?: string | null;
+    reviewed_by?: string;
+  }
+): Promise<Tenant> {
+  const supabase = getSupabaseAdmin();
+  const updates: Record<string, any> = {
+    status,
+    reviewed_at: new Date().toISOString(),
+    reviewed_by: options?.reviewed_by || null,
+  };
+
+  if (status === "rejected") {
+    updates.rejection_reason = options?.rejection_reason || "Store details require revision.";
+  } else if (status === "active") {
+    updates.rejection_reason = null;
+  }
+
+  const { data: updated, error } = await supabase
+    .from("tenants")
+    .update(updates)
+    .eq("id", tenantId)
+    .select("*")
+    .single();
+
+  if (error || !updated) {
+    throw new Error(`Failed to update store status: ${error?.message || "Unknown error"}`);
+  }
+
+  // Send notification to the store owner
+  if (updated.owner_telegram_id) {
+    try {
+      let message = "";
+      if (status === "active") {
+        message = `🎉 <b>Congratulations! Your Store is Approved!</b>\n\n` +
+          `Your store <b>${updated.name}</b> has been approved by the platform administrators.\n\n` +
+          `You can now access your dashboard, add products to your catalog, and start selling!`;
+      } else if (status === "rejected") {
+        message = `⚠️ <b>Store Application Status Update</b>\n\n` +
+          `Your application for store <b>${updated.name}</b> was not approved.\n\n` +
+          `<b>Reason:</b> ${updates.rejection_reason}\n\n` +
+          `You can update your store settings in the admin panel and re-apply.`;
+      } else if (status === "suspended") {
+        message = `⚠️ <b>Store Suspended</b>\n\n` +
+          `Your store <b>${updated.name}</b> has been suspended. Please contact platform support.`;
+      }
+
+      if (message) {
+        await sendTelegramMessage(updated.owner_telegram_id, message);
+      }
+    } catch (notifyErr) {
+      console.warn("Could not send Telegram status update to owner:", notifyErr);
+    }
+  }
+
+  return updated as Tenant;
 }

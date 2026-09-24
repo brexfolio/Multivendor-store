@@ -9,6 +9,7 @@ interface AdminActionCardProps {
   onClick: () => void;
   tone?: "primary" | "accent" | "success" | "warning" | "danger";
   badge?: number;
+  disabled?: boolean;
 }
 
 const ICON_TONE_CLASS: Record<string, string> = {
@@ -26,9 +27,15 @@ export default function AdminActionCard({
   onClick,
   tone = "primary",
   badge,
+  disabled,
 }: AdminActionCardProps) {
   return (
-    <button type="button" className="admin-action-card" onClick={onClick}>
+    <button
+      type="button"
+      className="admin-action-card"
+      onClick={disabled ? undefined : onClick}
+      style={disabled ? { opacity: 0.55, cursor: "not-allowed", filter: "grayscale(40%)" } : undefined}
+    >
       <div className={`admin-action-card__icon ${ICON_TONE_CLASS[tone]}`}>
         <Icon size={19} strokeWidth={2} />
       </div>

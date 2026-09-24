@@ -14,6 +14,8 @@ import {
   Package,
   CheckCircle2,
   Sparkles,
+  Clock,
+  ShieldAlert,
 } from "lucide-react";
 import Header from "@/components/store/Header";
 import TelegramImage from "@/components/ui/TelegramImage";
@@ -88,6 +90,47 @@ export default function VendorStorefrontPage() {
         <Link href="/explore">
           <button style={{ padding: "10px 20px", borderRadius: 10, background: "#2563eb", color: "#fff", border: "none", fontWeight: 700 }}>
             Explore All Stores
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (tenant && tenant.status === "pending_approval") {
+    return (
+      <div className="store-shell" style={{ background: "#0a0d14", minHeight: "100vh", textAlign: "center", padding: "60px 20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 68, height: 68, borderRadius: "50%", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
+          <Clock size={34} color="#fbbf24" />
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#fbbf24", background: "rgba(245, 158, 11, 0.1)", padding: "4px 10px", borderRadius: 20, marginBottom: 12 }}>
+          Under Verification
+        </span>
+        <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 10px" }}>{tenant.name} is Opening Soon!</h2>
+        <p style={{ color: "#94a3b8", fontSize: 14, maxWidth: 380, margin: "0 0 24px", lineHeight: 1.6 }}>
+          This shop application is currently being reviewed by Yegna Suqq administrators. Once verified, products and orders will become available here.
+        </p>
+        <Link href="/explore">
+          <button style={{ padding: "12px 24px", borderRadius: 12, background: "#2563eb", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
+            Explore Active Shops
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (tenant && tenant.status !== "active") {
+    return (
+      <div className="store-shell" style={{ background: "#0a0d14", minHeight: "100vh", textAlign: "center", padding: "60px 20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 68, height: 68, borderRadius: "50%", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
+          <ShieldAlert size={34} color="#f87171" />
+        </div>
+        <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 10px" }}>Store Currently Unavailable</h2>
+        <p style={{ color: "#94a3b8", fontSize: 14, maxWidth: 360, margin: "0 0 24px", lineHeight: 1.6 }}>
+          The shop "{tenant.name}" is currently inactive or suspended by administrators.
+        </p>
+        <Link href="/explore">
+          <button style={{ padding: "12px 24px", borderRadius: 12, background: "#2563eb", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
+            Explore Active Shops
           </button>
         </Link>
       </div>

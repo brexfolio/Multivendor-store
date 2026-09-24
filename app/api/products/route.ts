@@ -112,6 +112,15 @@ export async function POST(request: Request) {
 
   const tenant = auth.tenant;
 
+  if (tenant.status !== "active") {
+    const statusMsg = tenant.status === "pending_approval"
+      ? "Your store is currently under review by administrators. Adding products is locked until your store is approved."
+      : tenant.status === "rejected"
+      ? `Your store application was rejected (${tenant.rejection_reason || "Details need revision"}). Product creation is locked.`
+      : "Your store is currently suspended or inactive.";
+    return apiError(statusMsg, 403);
+  }
+
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const category = typeof body.category === "string" ? body.category.trim() : "General";
   const price = Number(body.price);

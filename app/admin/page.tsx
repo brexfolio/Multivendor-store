@@ -15,6 +15,8 @@ import {
   Boxes,
   ExternalLink,
   Share2,
+  Clock,
+  ShieldAlert,
 } from "lucide-react";
 import AdminGate from "@/components/admin/AdminGate";
 import AdminNavigation from "@/components/admin/AdminNavigation";
@@ -174,7 +176,7 @@ function AdminDashboardContent() {
             onOpenCreateNew={() => setShowOnboarding(true)}
           />
 
-          {storeLink && (
+          {activeTenant?.status === "active" && storeLink && (
             <a
               href={storeLink}
               target="_blank"
@@ -197,6 +199,46 @@ function AdminDashboardContent() {
               <ExternalLink size={14} />
             </a>
           )}
+
+          {activeTenant?.status === "pending_approval" && (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(245, 158, 11, 0.12)",
+                border: "1px solid rgba(245, 158, 11, 0.3)",
+                color: "#fbbf24",
+                padding: "6px 12px",
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              <Clock size={14} />
+              <span>Under Review</span>
+            </div>
+          )}
+
+          {activeTenant?.status === "rejected" && (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(239, 68, 68, 0.12)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                color: "#f87171",
+                padding: "6px 12px",
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              <ShieldAlert size={14} />
+              <span>Rejected</span>
+            </div>
+          )}
         </div>
 
         {view !== "menu" && (
@@ -212,6 +254,72 @@ function AdminDashboardContent() {
         {/* View: Menu / Dashboard Home */}
         {view === "menu" && (
           <div>
+            {/* Status Banners */}
+            {activeTenant?.status === "pending_approval" && (
+              <div
+                style={{
+                  background: "linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(245, 158, 11, 0.05) 100%)",
+                  border: "1px solid rgba(245, 158, 11, 0.3)",
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 18,
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
+                }}
+              >
+                <Clock size={20} color="#fbbf24" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: "0 0 4px", fontSize: 13.5, fontWeight: 700, color: "#fbbf24" }}>
+                    Store Application Under Review
+                  </h4>
+                  <p style={{ margin: 0, fontSize: 12, color: "#cbd5e1", lineHeight: 1.45 }}>
+                    Your store application is awaiting platform admin verification. You can configure your store profile and publishing settings below. Adding products and your public storefront will be unlocked once approved.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTenant?.status === "rejected" && (
+              <div
+                style={{
+                  background: "linear-gradient(135deg, rgba(239, 68, 68, 0.14) 0%, rgba(239, 68, 68, 0.05) 100%)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 18,
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
+                }}
+              >
+                <ShieldAlert size={20} color="#f87171" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: "0 0 4px", fontSize: 13.5, fontWeight: 700, color: "#f87171" }}>
+                    Store Application Not Approved
+                  </h4>
+                  <p style={{ margin: "0 0 8px", fontSize: 12, color: "#cbd5e1", lineHeight: 1.45 }}>
+                    Reason: <strong>{activeTenant.rejection_reason || "Store details require revision."}</strong>
+                  </p>
+                  <button
+                    onClick={() => setView("settings")}
+                    style={{
+                      background: "#2563eb",
+                      border: "none",
+                      color: "#fff",
+                      padding: "6px 12px",
+                      borderRadius: 8,
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Update Store Settings
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Analytics Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 18 }}>
               <div style={{ background: "#161b26", borderRadius: 14, padding: 14, border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -260,8 +368,15 @@ function AdminDashboardContent() {
               <AdminActionCard
                 icon={Plus}
                 label={`Add ${shopConfig?.listingLabel || "Product"}`}
-                description="List an item with photos"
-                onClick={() => setView("add-product")}
+                description={activeTenant?.status === "active" ? "List an item with photos" : "Locked (Under Review)"}
+                onClick={() => {
+                  if (activeTenant?.status !== "active") {
+                    showToast("error", "Your store must be approved before adding products.");
+                    return;
+                  }
+                  setView("add-product");
+                }}
+                disabled={activeTenant?.status !== "active"}
               />
 
               <AdminActionCard
@@ -282,8 +397,15 @@ function AdminDashboardContent() {
               <AdminActionCard
                 icon={Boxes}
                 label="Stock & Inventory"
-                description="Adjust quantities & costs"
-                onClick={() => router.push(`/admin/inventory?tenant_id=${activeTenant?.id}`)}
+                description={activeTenant?.status === "active" ? "Adjust quantities & costs" : "Locked (Under Review)"}
+                onClick={() => {
+                  if (activeTenant?.status !== "active") {
+                    showToast("error", "Your store must be approved before managing inventory.");
+                    return;
+                  }
+                  router.push(`/admin/inventory?tenant_id=${activeTenant?.id}`);
+                }}
+                disabled={activeTenant?.status !== "active"}
               />
 
               <AdminActionCard
